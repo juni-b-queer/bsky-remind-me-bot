@@ -3,7 +3,7 @@ import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} fr
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {REPLIES} from "./util/bot-replies.ts";
 import {flattenText} from "./util/text-utils.ts";
-
+import {PostDetails} from "./util/types.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
@@ -43,9 +43,9 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
                 case 'app.bsky.feed.post':
                     if (AppBskyFeedPost.isRecord(payload)) {
                         if (payload.reply) {
-                            payloadTrigger(op, m.repo).then((shouldRespond) => {
-                                if (shouldRespond) {
-                                    handlePayload(op, m.repo)
+                            payloadTrigger(op, m.repo).then((postDetails: false | PostDetails) => {
+                                if (postDetails) {
+                                    handlePayload(op, postDetails)
                                 }
                             })
                         }
@@ -68,25 +68,20 @@ async function payloadTrigger(op: RepoOp, repo: string) {
     let postDetails = await findPostDetails(op, repo);
     let postDid = postDetails.uri.split('/')[2];
     let postedByBot = postDid === BOT_DID;
-    return startsWith && !postedByBot;
+    return (startsWith && !postedByBot) ? postDetails : false;
 }
 
 
 /**
  * Replies to the skeet
  */
-async function handlePayload(op: RepoOp, repo: string) {
-
-    let payload = op.payload;
-
-    let currentPost = await findPostDetails(op, repo);
-
+async function handlePayload(op: RepoOp, currentPost: PostDetails) {
     const replyText = new RichText({
         text: `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`,
     })
     let newPost = await agent.post({
         reply: {
-            root: payload.reply.root,
+            root: op.payload.reply.root,
             parent: {
                 cid: currentPost.cid,
                 uri: currentPost.uri
@@ -101,7 +96,7 @@ async function handlePayload(op: RepoOp, repo: string) {
 /**
  * Mainly used to get a skeets uri, since it's for some reason not included in the op or message
  */
-async function findPostDetails(op: RepoOp, repo: string) {
+async function findPostDetails(op: RepoOp, repo: string): Promise<PostDetails> {
     let rkey = op.path.split('/')[1]
     return await agent.getPost({
         repo: repo, rkey: rkey

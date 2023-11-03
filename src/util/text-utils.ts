@@ -5,6 +5,5 @@
 export function flattenText(input: string): string{
     return input
         .toLowerCase()
-        // .replaceAll(" ", "")
         .replace(/[^a-zA-Z]/g, '')
 }
