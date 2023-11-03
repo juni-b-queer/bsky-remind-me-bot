@@ -3,10 +3,10 @@ import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} fr
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 
 
-let savedSessionData;
+let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
 const BSKY_PASSWORD: string = <string>Bun.env.BSKY_PASSWORD
-let BOT_DID;
+let BOT_DID: string | undefined;
 
 const REPLIES = [
     'nobody asked',
@@ -34,7 +34,7 @@ async function initialize(){
     await agent.resumeSession(savedSessionData)
 }
 
-async function payloadTrigger(op, repo) {
+async function payloadTrigger(op: RepoOp, repo: string) {
     const flatText = op.payload.text.toLowerCase()
 
     let startsWith = flatText.startsWith('well actually') || flatText.startsWith('well, actually');
@@ -48,14 +48,14 @@ async function payloadTrigger(op, repo) {
     return startsWith && !postedByBot;
 }
 
-async function findPostDetails(op: RepoOp, repo){
+async function findPostDetails(op: RepoOp, repo: string){
     let rkey = op.path.split('/')[1]
     return await agent.getPost({
         repo: repo, rkey: rkey
     });
 }
 
-async function handlePayload(op: RepoOp, repo){
+async function handlePayload(op: RepoOp, repo: string){
 
     let payload = op.payload;
 
