@@ -35,15 +35,14 @@ async function initialize(){
 }
 
 async function payloadTrigger(op: RepoOp, repo: string) {
-    const flatText = op.payload.text.toLowerCase()
+    const flatText = op.payload.text.toLowerCase().replaceAll(" ", "")
 
-    let startsWith = flatText.startsWith('well actually') || flatText.startsWith('well, actually');
+    let startsWith = flatText.startsWith('wellactually') || flatText.startsWith('well,actually');
     if(!startsWith){
         return false;
     }
     let postDetails = await findPostDetails(op, repo);
-    let split = postDetails.uri.split('/')
-    let postDid = split[2];
+    let postDid = postDetails.uri.split('/')[2];
     let postedByBot = postDid === BOT_DID;
     return startsWith && !postedByBot;
 }
@@ -64,7 +63,7 @@ async function handlePayload(op: RepoOp, repo: string){
     const replyText = new RichText({
         text: `Well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`,
     })
-    let replyPost = await agent.post({
+    return await agent.post({
         reply: {
             root: payload.reply.root,
             parent: {
@@ -73,8 +72,7 @@ async function handlePayload(op: RepoOp, repo: string){
             }
         },
         text: replyText.text
-    })
-    return replyPost;
+    });
 }
 
 await initialize();
