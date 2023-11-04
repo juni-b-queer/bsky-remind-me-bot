@@ -2,6 +2,9 @@
   "name": "bun-firehose-bot",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {
+    "build": "bun build --target=bun ./src/index.ts --outfile=./build/index.ts"
+  },
   "devDependencies": {
     "bun-types": "latest"
   },

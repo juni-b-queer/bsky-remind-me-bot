@@ -39,6 +39,7 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
     if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
         m.ops.forEach((op) => {
             let payload = op.payload;
+            // @ts-ignore
             switch (payload?.$type) {
                 case 'app.bsky.feed.post':
                     if (AppBskyFeedPost.isRecord(payload)) {
@@ -59,6 +60,7 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
  * Returns a boolean for if the skeet should trigger a response
  */
 async function payloadTrigger(op: RepoOp, repo: string) {
+    // @ts-ignore
     const flatText = flattenText(op.payload.text)
 
     let startsWith = flatText.startsWith('wellactually');
@@ -79,8 +81,10 @@ async function handlePayload(op: RepoOp, currentPost: PostDetails) {
     const replyText = new RichText({
         text: `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`,
     })
+
     let newPost = await agent.post({
         reply: {
+            // @ts-ignore
             root: op.payload.reply.root,
             parent: {
                 cid: currentPost.cid,
