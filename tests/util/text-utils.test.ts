@@ -1,5 +1,5 @@
 import {describe, expect, test} from "bun:test";
-import {flattenText} from "../../src/util/text-utils.ts";
+import {flattenText} from "../../src/text-utils.ts";
 
 describe("flattenText removes spaces", () => {
     test("Single space", () => {

@@ -18,5 +18,5 @@
     "types": [
       "bun-types" // add Bun global
     ]
-  }
+  },
 }

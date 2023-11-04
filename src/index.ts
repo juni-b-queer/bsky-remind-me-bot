@@ -1,9 +1,9 @@
 import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent, RichText} from "@atproto/api";
 import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {REPLIES} from "./util/bot-replies.ts";
-import {flattenText} from "./util/text-utils.ts";
-import {PostDetails} from "./util/types.ts";
+import {REPLIES} from "./bot-replies.ts"
+import {flattenText} from "./text-utils.ts";
+import {PostDetails} from "./types.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
@@ -27,6 +27,7 @@ async function initialize() {
         throw new Error('Could not retrieve bluesky session data')
     }
     await agent.resumeSession(savedSessionData)
+    console.log("Agent Authenticated!")
 }
 
 await initialize();
