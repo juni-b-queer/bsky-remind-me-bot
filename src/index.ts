@@ -2,13 +2,15 @@ import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent, RichText} f
 import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {REPLIES} from "./bot-replies.ts"
-import {flattenText} from "./text-utils.ts";
+import {containsNumbers, containsPunctuation, flattenText} from "./text-utils.ts";
 import {PostDetails} from "./types.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
 const BSKY_PASSWORD: string = <string>Bun.env.BSKY_PASSWORD
 let BOT_DID: string | undefined;
+
+const SEND_ONLINE_MESSAGE = false
 
 /**
  * Bluesky agent for taking actions (posting) on bluesky
@@ -27,10 +29,51 @@ async function initialize() {
         throw new Error('Could not retrieve bluesky session data')
     }
     await agent.resumeSession(savedSessionData)
+    if(SEND_ONLINE_MESSAGE){
+        const onlineText = new RichText({
+            text: `Bot Online!`,
+        });
+        let OnlinePost = await agent.post({
+            text: onlineText.text
+        });
+    }
+
     console.log("Agent Authenticated!")
 }
 
 await initialize();
+
+
+/**
+ * Payload handler functions
+ */
+async function postReplyHandler(op: RepoOp, repo: string){
+    // When payload starts with wellactually
+    payloadTriggerStartsWith(op, repo, 'wellactually').then((postDetails: false | PostDetails) => {
+        if (postDetails) {
+            let inputText = `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`;
+            handleReplyPayloadWithReply(op, postDetails, inputText)
+        }
+    })
+
+    // // When payload starts with junissecretphrase
+    // payloadTriggerStartsWith(op, repo, 'junissecretphrase').then((postDetails: false | PostDetails) => {
+    //     if (postDetails) {
+    //         let inputText = `Junis secret phrase detected within reply`;
+    //         handleReplyPayloadWithReply(op, postDetails, inputText)
+    //     }
+    // })
+}
+
+async function postHandler(op: RepoOp, repo: string){
+    // // When Post contains 'secretkey123'
+    // payloadTriggerContains(op, repo, 'secretkey123').then((postDetails: false | PostDetails) => {
+    //     if (postDetails) {
+    //         let inputText = `Junis secret key detected within post`;
+    //         handlePostPayloadWithReply(op, postDetails, inputText)
+    //     }
+    // })
+}
 
 /**
  * The client and listener for the firehose
@@ -45,11 +88,9 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
                 case 'app.bsky.feed.post':
                     if (AppBskyFeedPost.isRecord(payload)) {
                         if (payload.reply) {
-                            payloadTrigger(op, m.repo).then((postDetails: false | PostDetails) => {
-                                if (postDetails) {
-                                    handlePayload(op, postDetails)
-                                }
-                            })
+                            postReplyHandler(op, m.repo)
+                        }else{
+                            postHandler(op, m.repo)
                         }
                     }
             }
@@ -60,33 +101,70 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
 /**
  * Returns a boolean for if the skeet should trigger a response
  */
-async function payloadTrigger(op: RepoOp, repo: string) {
+async function payloadTriggerStartsWith(op: RepoOp, repo: string, startsWithInput: string) {
     // @ts-ignore
-    const flatText = flattenText(op.payload.text)
+    const flatText = flattenText(op.payload.text, containsNumbers(op.payload.text), containsPunctuation(op.payload.text))
 
-    let startsWith = flatText.startsWith('wellactually');
-    if (!startsWith) {
+    let doesStartWith = flatText.startsWith(startsWithInput);
+    if (!doesStartWith) {
         return false;
     }
     let postDetails = await findPostDetails(op, repo);
     let postDid = postDetails.uri.split('/')[2];
     let postedByBot = postDid === BOT_DID;
-    return (startsWith && !postedByBot) ? postDetails : false;
+    return (doesStartWith && !postedByBot) ? postDetails : false;
+}
+
+async function payloadTriggerContains(op: RepoOp, repo: string, containsInput: string) {
+    // @ts-ignore
+    const flatText = flattenText(op.payload.text, containsNumbers(op.payload.text), containsPunctuation(op.payload.text))
+
+    let doesContain = flatText.includes(containsInput);
+    if (!doesContain) {
+        return false;
+    }
+    let postDetails = await findPostDetails(op, repo);
+    let postDid = postDetails.uri.split('/')[2];
+    let postedByBot = postDid === BOT_DID;
+    return (doesContain && !postedByBot) ? postDetails : false;
 }
 
 
 /**
  * Replies to the skeet
  */
-async function handlePayload(op: RepoOp, currentPost: PostDetails) {
+async function handleReplyPayloadWithReply(op: RepoOp, currentPost: PostDetails, replyTextInput: string) {
     const replyText = new RichText({
-        text: `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`,
+        text: replyTextInput,
     })
 
     let newPost = await agent.post({
         reply: {
             // @ts-ignore
             root: op.payload.reply.root,
+            parent: {
+                cid: currentPost.cid,
+                uri: currentPost.uri
+            }
+        },
+        text: replyText.text
+    });
+    console.log(newPost)
+    return;
+}
+
+async function handlePostPayloadWithReply(op: RepoOp, currentPost: PostDetails, replyTextInput: string) {
+    const replyText = new RichText({
+        text: replyTextInput,
+    })
+
+    let newPost = await agent.post({
+        reply: {
+            // @ts-ignore
+            root: {
+                cid: currentPost.cid,
+                uri: currentPost.uri
+            },
             parent: {
                 cid: currentPost.cid,
                 uri: currentPost.uri
