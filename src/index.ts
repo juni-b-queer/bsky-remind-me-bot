@@ -4,6 +4,7 @@ import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeR
 import {REPLIES} from "./bot-replies.ts"
 import {containsNumbers, containsPunctuation, flattenText} from "./text-utils.ts";
 import {PostDetails} from "./types.ts";
+import {HandlerController, PostHandler} from "./handlers/abstract-handler.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
@@ -11,6 +12,9 @@ const BSKY_PASSWORD: string = <string>Bun.env.BSKY_PASSWORD
 let BOT_DID: string | undefined;
 
 const SEND_ONLINE_MESSAGE = false
+
+let postHandlerClass: PostHandler;
+let handlerController: HandlerController;
 
 /**
  * Bluesky agent for taking actions (posting) on bluesky
@@ -37,7 +41,17 @@ async function initialize() {
             text: onlineText.text
         });
     }
-
+    handlerController = new HandlerController([
+        new PostHandler(agent,
+            'secretkey123',
+            (triggerKey, input) => {
+                return input.includes(triggerKey);
+            },
+            (op) =>{
+                console.log(op)
+            }
+        )
+    ])
     console.log("Agent Authenticated!")
 }
 
@@ -51,14 +65,18 @@ async function postReplyHandler(op: RepoOp, repo: string){
     // When payload starts with wellactually
     payloadTriggerStartsWith(op, repo, 'wellactually').then((postDetails: false | PostDetails) => {
         if (postDetails) {
+            console.log('Handling well actually reply for post:')
+            console.log(op.payload.text)
             let inputText = `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`;
             handleReplyPayloadWithReply(op, postDetails, inputText)
+
         }
     })
-
     payloadTriggerContains(op, repo, ' 69 ', true).then((postDetails: false | PostDetails) => {
         if (postDetails) {
-            let inputText = `Nice.`;
+            console.log('Handling 69 reply for post:')
+            console.log(op.payload.text)
+            let inputText = `Nice. 😎`;
             handleReplyPayloadWithReply(op, postDetails, inputText)
         }
     })
@@ -68,7 +86,9 @@ async function postHandler(op: RepoOp, repo: string){
     // When Post contains '69'
     payloadTriggerContains(op, repo, ' 69 ', true).then((postDetails: false | PostDetails) => {
         if (postDetails) {
-            let inputText = `Nice.`;
+            console.log('Handling 69 post for post:')
+            console.log(op.payload.text)
+            let inputText = `Nice. 😎`;
             handlePostPayloadWithReply(op, postDetails, inputText)
         }
     })
@@ -87,13 +107,14 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
                 case 'app.bsky.feed.post':
                     if (AppBskyFeedPost.isRecord(payload)) {
                         if (payload.reply) {
-                            postReplyHandler(op, m.repo).then(() =>{
-
-                            })
+                            // postReplyHandler(op, m.repo).then(() =>{
+                            //
+                            // })
                         }else{
-                            postHandler(op, m.repo).then(() =>{
-
-                            })
+                            handlerController.handle(op, m.repo)
+                            // postHandler(op, m.repo).then(() =>{
+                            //
+                            // })
                         }
                     }
             }
@@ -152,7 +173,7 @@ async function handleReplyPayloadWithReply(op: RepoOp, currentPost: PostDetails,
         },
         text: replyText.text
     });
-    console.log(newPost)
+    // console.log(newPost)
     return;
 }
 
