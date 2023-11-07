@@ -56,23 +56,22 @@ async function postReplyHandler(op: RepoOp, repo: string){
         }
     })
 
-    // // When payload starts with junissecretphrase
-    // payloadTriggerStartsWith(op, repo, 'junissecretphrase').then((postDetails: false | PostDetails) => {
-    //     if (postDetails) {
-    //         let inputText = `Junis secret phrase detected within reply`;
-    //         handleReplyPayloadWithReply(op, postDetails, inputText)
-    //     }
-    // })
+    payloadTriggerContains(op, repo, ' 69 ', true).then((postDetails: false | PostDetails) => {
+        if (postDetails) {
+            let inputText = `Nice.`;
+            handleReplyPayloadWithReply(op, postDetails, inputText)
+        }
+    })
 }
 
 async function postHandler(op: RepoOp, repo: string){
-    // // When Post contains 'secretkey123'
-    // payloadTriggerContains(op, repo, 'secretkey123').then((postDetails: false | PostDetails) => {
-    //     if (postDetails) {
-    //         let inputText = `Junis secret key detected within post`;
-    //         handlePostPayloadWithReply(op, postDetails, inputText)
-    //     }
-    // })
+    // When Post contains '69'
+    payloadTriggerContains(op, repo, ' 69 ', true).then((postDetails: false | PostDetails) => {
+        if (postDetails) {
+            let inputText = `Nice.`;
+            handlePostPayloadWithReply(op, postDetails, inputText)
+        }
+    })
 }
 
 /**
@@ -88,9 +87,13 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
                 case 'app.bsky.feed.post':
                     if (AppBskyFeedPost.isRecord(payload)) {
                         if (payload.reply) {
-                            postReplyHandler(op, m.repo)
+                            postReplyHandler(op, m.repo).then(() =>{
+
+                            })
                         }else{
-                            postHandler(op, m.repo)
+                            postHandler(op, m.repo).then(() =>{
+
+                            })
                         }
                     }
             }
@@ -101,9 +104,9 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
 /**
  * Returns a boolean for if the skeet should trigger a response
  */
-async function payloadTriggerStartsWith(op: RepoOp, repo: string, startsWithInput: string) {
+async function payloadTriggerStartsWith(op: RepoOp, repo: string, startsWithInput: string, exactMatch: boolean = false) {
     // @ts-ignore
-    const flatText = flattenText(op.payload.text, containsNumbers(op.payload.text), containsPunctuation(op.payload.text))
+    const flatText = exactMatch ? op.payload.text : flattenText(op.payload.text, containsNumbers(startsWithInput), containsPunctuation(startsWithInput))
 
     let doesStartWith = flatText.startsWith(startsWithInput);
     if (!doesStartWith) {
@@ -115,9 +118,9 @@ async function payloadTriggerStartsWith(op: RepoOp, repo: string, startsWithInpu
     return (doesStartWith && !postedByBot) ? postDetails : false;
 }
 
-async function payloadTriggerContains(op: RepoOp, repo: string, containsInput: string) {
+async function payloadTriggerContains(op: RepoOp, repo: string, containsInput: string, exactMatch: boolean = false) {
     // @ts-ignore
-    const flatText = flattenText(op.payload.text, containsNumbers(op.payload.text), containsPunctuation(op.payload.text))
+    const flatText = exactMatch ? op.payload.text : flattenText(op.payload.text, containsNumbers(containsInput), containsPunctuation(containsInput))
 
     let doesContain = flatText.includes(containsInput);
     if (!doesContain) {

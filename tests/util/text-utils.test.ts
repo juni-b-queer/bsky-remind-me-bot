@@ -148,3 +148,16 @@ describe("removePunctuation works", () => {
     });
 
 });
+
+describe("flatten text works for 69", () => {
+
+    test("with 69", () => {
+        let input = "WELL ACTUALLY! im 69"
+        let expected = "wellactuallyim69"
+        let flattened = flattenText(input, containsNumbers('69'), containsPunctuation('69'))
+        expect(flattened).toBe(expected);
+        expect(flattened.includes('69')).toBe(true)
+    });
+
+});
+
