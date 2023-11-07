@@ -1,10 +1,9 @@
 import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent, RichText} from "@atproto/api";
 import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {REPLIES} from "./bot-replies.ts"
-import {containsNumbers, containsPunctuation, flattenText} from "./text-utils.ts";
-import {PostDetails} from "./types.ts";
 import {HandlerController, PostHandler} from "./handlers/abstract-handler.ts";
+import {validatorInputContains, validatorInputStartsWith} from "./handlers/trigger-validator-functions.ts";
+import {replyToSixtyNine, replyToWellActually} from "./handlers/trigger-action-functions.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
@@ -13,8 +12,8 @@ let BOT_DID: string | undefined;
 
 const SEND_ONLINE_MESSAGE = false
 
-let postHandlerClass: PostHandler;
-let handlerController: HandlerController;
+let postHandlerController: HandlerController;
+let replyHandlerController: HandlerController;
 
 /**
  * Bluesky agent for taking actions (posting) on bluesky
@@ -41,15 +40,25 @@ async function initialize() {
             text: onlineText.text
         });
     }
-    handlerController = new HandlerController([
+    // Here is where we're initializing the handler functions
+    postHandlerController = new HandlerController([
         new PostHandler(agent,
-            'secretkey123',
-            (triggerKey, input) => {
-                return input.includes(triggerKey);
-            },
-            (op) =>{
-                console.log(op)
-            }
+            ' 69 ',
+            validatorInputContains,
+            replyToSixtyNine
+        )
+    ])
+
+    replyHandlerController = new HandlerController([
+        new PostHandler(agent,
+            'wellactually',
+            validatorInputStartsWith,
+            replyToWellActually
+        ),
+        new PostHandler(agent,
+            ' 69 ',
+            validatorInputContains,
+            replyToSixtyNine
         )
     ])
     console.log("Agent Authenticated!")
@@ -59,155 +68,26 @@ await initialize();
 
 
 /**
- * Payload handler functions
- */
-async function postReplyHandler(op: RepoOp, repo: string){
-    // When payload starts with wellactually
-    payloadTriggerStartsWith(op, repo, 'wellactually').then((postDetails: false | PostDetails) => {
-        if (postDetails) {
-            console.log('Handling well actually reply for post:')
-            console.log(op.payload.text)
-            let inputText = `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`;
-            handleReplyPayloadWithReply(op, postDetails, inputText)
-
-        }
-    })
-    payloadTriggerContains(op, repo, ' 69 ', true).then((postDetails: false | PostDetails) => {
-        if (postDetails) {
-            console.log('Handling 69 reply for post:')
-            console.log(op.payload.text)
-            let inputText = `Nice. 😎`;
-            handleReplyPayloadWithReply(op, postDetails, inputText)
-        }
-    })
-}
-
-async function postHandler(op: RepoOp, repo: string){
-    // When Post contains '69'
-    payloadTriggerContains(op, repo, ' 69 ', true).then((postDetails: false | PostDetails) => {
-        if (postDetails) {
-            console.log('Handling 69 post for post:')
-            console.log(op.payload.text)
-            let inputText = `Nice. 😎`;
-            handlePostPayloadWithReply(op, postDetails, inputText)
-        }
-    })
-}
-
-/**
  * The client and listener for the firehose
  */
 const firehoseClient = subscribeRepos(`wss://bsky.social`, {decodeRepoOps: true})
 firehoseClient.on('message', (m: SubscribeReposMessage) => {
     if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
-        m.ops.forEach((op) => {
+        m.ops.forEach((op: RepoOp) => {
             let payload = op.payload;
             // @ts-ignore
             switch (payload?.$type) {
                 case 'app.bsky.feed.post':
                     if (AppBskyFeedPost.isRecord(payload)) {
                         if (payload.reply) {
-                            // postReplyHandler(op, m.repo).then(() =>{
-                            //
-                            // })
+                            replyHandlerController.handle(op, m.repo)
                         }else{
-                            handlerController.handle(op, m.repo)
-                            // postHandler(op, m.repo).then(() =>{
-                            //
-                            // })
+                            postHandlerController.handle(op, m.repo)
                         }
                     }
             }
         })
     }
 })
-
-/**
- * Returns a boolean for if the skeet should trigger a response
- */
-async function payloadTriggerStartsWith(op: RepoOp, repo: string, startsWithInput: string, exactMatch: boolean = false) {
-    // @ts-ignore
-    const flatText = exactMatch ? op.payload.text : flattenText(op.payload.text, containsNumbers(startsWithInput), containsPunctuation(startsWithInput))
-
-    let doesStartWith = flatText.startsWith(startsWithInput);
-    if (!doesStartWith) {
-        return false;
-    }
-    let postDetails = await findPostDetails(op, repo);
-    let postDid = postDetails.uri.split('/')[2];
-    let postedByBot = postDid === BOT_DID;
-    return (doesStartWith && !postedByBot) ? postDetails : false;
-}
-
-async function payloadTriggerContains(op: RepoOp, repo: string, containsInput: string, exactMatch: boolean = false) {
-    // @ts-ignore
-    const flatText = exactMatch ? op.payload.text : flattenText(op.payload.text, containsNumbers(containsInput), containsPunctuation(containsInput))
-
-    let doesContain = flatText.includes(containsInput);
-    if (!doesContain) {
-        return false;
-    }
-    let postDetails = await findPostDetails(op, repo);
-    let postDid = postDetails.uri.split('/')[2];
-    let postedByBot = postDid === BOT_DID;
-    return (doesContain && !postedByBot) ? postDetails : false;
-}
-
-
-/**
- * Replies to the skeet
- */
-async function handleReplyPayloadWithReply(op: RepoOp, currentPost: PostDetails, replyTextInput: string) {
-    const replyText = new RichText({
-        text: replyTextInput,
-    })
-
-    let newPost = await agent.post({
-        reply: {
-            // @ts-ignore
-            root: op.payload.reply.root,
-            parent: {
-                cid: currentPost.cid,
-                uri: currentPost.uri
-            }
-        },
-        text: replyText.text
-    });
-    // console.log(newPost)
-    return;
-}
-
-async function handlePostPayloadWithReply(op: RepoOp, currentPost: PostDetails, replyTextInput: string) {
-    const replyText = new RichText({
-        text: replyTextInput,
-    })
-
-    let newPost = await agent.post({
-        reply: {
-            // @ts-ignore
-            root: {
-                cid: currentPost.cid,
-                uri: currentPost.uri
-            },
-            parent: {
-                cid: currentPost.cid,
-                uri: currentPost.uri
-            }
-        },
-        text: replyText.text
-    });
-    console.log(newPost)
-    return;
-}
-
-/**
- * Mainly used to get a skeets uri, since it's for some reason not included in the op or message
- */
-async function findPostDetails(op: RepoOp, repo: string): Promise<PostDetails> {
-    let rkey = op.path.split('/')[1]
-    return await agent.getPost({
-        repo: repo, rkey: rkey
-    });
-}
 
 

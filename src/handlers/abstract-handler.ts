@@ -3,7 +3,10 @@ import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeR
 import {PostDetails} from "../types.ts";
 
 abstract class PayloadHandler{
-    constructor(private agent: BskyAgent, private triggerKey: string, private triggerValidator, private triggerAction ){}
+    protected agentDid;
+    constructor(private agent: BskyAgent, private triggerKey: string, private triggerValidator, private triggerAction ){
+        this.agentDid = agent.session?.did
+    }
 
     shouldTrigger(input: string): boolean {
         return this.triggerValidator(this.triggerKey, input)
@@ -16,8 +19,7 @@ abstract class PayloadHandler{
         });
     }
 
-    abstract handle(op: RepoOp, repo: string): void;
-
+    abstract async handle(op: RepoOp, repo: string): Promise<void>;
 
 }
 
@@ -27,9 +29,17 @@ export class PostHandler extends PayloadHandler{
         return this;
     }
 
-    handle(op: RepoOp, repo: string): void {
-        if(this.shouldTrigger(op.payload.text)){
-            this.triggerAction(op)
+    postedByUser(postDetails: PostDetails){
+        let postDid = postDetails.uri.split('/')[2];
+        return postDid === this.agentDid
+    }
+
+    async handle(op: RepoOp, repo: string): Promise<void> {
+        if (this.shouldTrigger(op.payload.text)) {
+            let postDetails = await this.getPostDetails(op, repo);
+            if(!this.postedByUser(postDetails)){
+                this.triggerAction(this.agent, op, postDetails)
+            }
         }
     }
 }

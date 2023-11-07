@@ -1,18 +1,26 @@
-/**
- * Flatten Text runs a number of string mutations to remove special characters, spaces, and convert it to lower case
- * @param input
- * @param alphaNumeric
- * @param keepPunctuation
- */
-export function flattenText(input: string, alphaNumeric: boolean = false, keepPunctuation: boolean = false): string{
-    input = keepPunctuation ? input : removePunctuation(input);
-    return input
-        .toLowerCase()
-        .replace(alphaNumeric ? /[^a-z0-9.,\/#!$?%\^&\*;:{}=\-_`~()]/g : /[^a-zA-Z.,\/#!$?%\^&\*;:{}=\-_`~()]/g, '')
+export function flattenTextUpdated(triggerKey: string, input: string){
+    if(!containsNumbers(triggerKey)){
+        input = removeNumbers(input)
+    }
+    if(!containsPunctuation(triggerKey)){
+        input = removePunctuation(input)
+    }
+    if(!containsSpaces(triggerKey)){
+        input = removeSpaces(input)
+    }
+    return input.toLowerCase();
 }
 
 export function removePunctuation(input: string){
     return input.replace(/[.,\/#!$?%\^&\*;:{}=\-_`~()]/g,"").replace(/\s{2,}/g," ")
+}
+
+export function removeNumbers(input: string){
+    return input.replace(/[0-9]/g,"");
+}
+
+export function removeSpaces(input: string){
+    return input.replace(" ","");
 }
 
 export function containsNumbers(str) {
@@ -21,4 +29,8 @@ export function containsNumbers(str) {
 
 export function containsPunctuation(str) {
     return /\p{P}/gu.test(str);
+}
+
+export function containsSpaces(str) {
+    return str.includes(" ");
 }
