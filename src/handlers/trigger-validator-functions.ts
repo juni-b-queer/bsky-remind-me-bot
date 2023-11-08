@@ -16,3 +16,7 @@ export function validatorInputContains(triggerKey: string, input: string) {
 
     return flatText.includes(triggerKey);
 }
+
+export function validatorInputIs(triggerKey: string, input: string) {
+    return input === triggerKey;
+}

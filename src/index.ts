@@ -2,8 +2,14 @@ import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent, RichText} f
 import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {HandlerController, PostHandler} from "./handlers/abstract-handler.ts";
-import {validatorInputContains, validatorInputStartsWith} from "./handlers/trigger-validator-functions.ts";
-import {replyToSixtyNine, replyToWellActually} from "./handlers/trigger-action-functions.ts";
+import {
+    validatorInputContains,
+    validatorInputIs,
+    validatorInputStartsWith
+} from "./handlers/trigger-validator-functions.ts";
+import {BeeMovieScriptHandler, replyWithBeeMovieScript} from "./handlers/bee-movie/bee-movie-script-handler.ts";
+import {WellActuallyHandler} from "./handlers/well-actually/well-actually-handler.ts";
+import {SixtyNineHandler} from "./handlers/sixty-nine/sixty-nine-handler.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
@@ -14,6 +20,8 @@ const SEND_ONLINE_MESSAGE = false
 
 let postHandlerController: HandlerController;
 let replyHandlerController: HandlerController;
+
+let testingHandlerController: HandlerController;
 
 /**
  * Bluesky agent for taking actions (posting) on bluesky
@@ -41,26 +49,19 @@ async function initialize() {
         });
     }
     // Here is where we're initializing the handler functions
-    postHandlerController = new HandlerController([
-        new PostHandler(agent,
-            ' 69 ',
-            validatorInputContains,
-            replyToSixtyNine
-        )
+    postHandlerController = new HandlerController( agent, [
+        SixtyNineHandler
     ])
 
-    replyHandlerController = new HandlerController([
-        new PostHandler(agent,
-            'wellactually',
-            validatorInputStartsWith,
-            replyToWellActually
-        ),
-        new PostHandler(agent,
-            ' 69 ',
-            validatorInputContains,
-            replyToSixtyNine
-        )
+    replyHandlerController = new HandlerController(agent,[
+        WellActuallyHandler,
+        SixtyNineHandler
     ])
+
+    testingHandlerController = new HandlerController(agent, [
+        BeeMovieScriptHandler
+    ])
+
     console.log("Agent Authenticated!")
 }
 
@@ -82,6 +83,7 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
                         if (payload.reply) {
                             replyHandlerController.handle(op, m.repo)
                         }else{
+                            // testingHandlerController.handle(op, m.repo)
                             postHandlerController.handle(op, m.repo)
                         }
                     }

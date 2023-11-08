@@ -4,7 +4,11 @@ import {PostDetails} from "../types.ts";
 
 abstract class PayloadHandler{
     protected agentDid;
-    constructor(private agent: BskyAgent, private triggerKey: string, private triggerValidator, private triggerAction ){
+    protected agent: BskyAgent;
+    constructor(private triggerKey: string, private triggerValidator, private triggerAction ){}
+
+    setAgent(agent: BskyAgent){
+        this.agent = agent;
         this.agentDid = agent.session?.did
     }
 
@@ -24,8 +28,8 @@ abstract class PayloadHandler{
 }
 
 export class PostHandler extends PayloadHandler{
-    constructor(private agent: BskyAgent, private triggerKey: string, private triggerValidator, private triggerAction) {
-        super(agent, triggerKey, triggerValidator, triggerAction);
+    constructor(private triggerKey: string, private triggerValidator, private triggerAction) {
+        super(triggerKey, triggerValidator, triggerAction);
         return this;
     }
 
@@ -45,7 +49,10 @@ export class PostHandler extends PayloadHandler{
 }
 
 export class HandlerController{
-    constructor(private handlers: Array<PayloadHandler>) {
+    constructor(private agent: BskyAgent, private handlers: Array<PayloadHandler>) {
+        this.handlers.forEach((handler) =>{
+            handler.setAgent(this.agent)
+        })
     }
 
     handle(op: RepoOp, repo: string){

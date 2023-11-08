@@ -25,7 +25,7 @@ export async function replyToPost(agent: BskyAgent, currentPost: PostDetails, re
         reply.root = currentPost.value.reply.root
     }
 
-    await agent.post({
+    return await agent.post({
         reply: reply,
         text: replyText.text
     });
