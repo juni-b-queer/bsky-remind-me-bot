@@ -4,7 +4,7 @@ import {
     containsPunctuation,
     flattenTextUpdated,
     removePunctuation
-} from "../../src/text-utils.ts";
+} from "../../src/utils/text-utils.ts";
 
 describe("flattenTextUpdated Handles keys", () => {
     test("Key contains Spaces, Keeps spaces", () => {

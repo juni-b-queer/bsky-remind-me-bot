@@ -1,16 +1,11 @@
 import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent, RichText} from "@atproto/api";
 import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {HandlerController, PostHandler} from "./handlers/abstract-handler.ts";
-import {
-    validatorInputContains,
-    validatorInputIs,
-    validatorInputStartsWith
-} from "./handlers/trigger-validator-functions.ts";
-import {BeeMovieScriptHandler, replyWithBeeMovieScript} from "./handlers/bee-movie/bee-movie-script-handler.ts";
+import {HandlerController} from "./handlers/abstract-handler.ts";
+import {TestHandler} from "./handlers/test-handler/test-handler.ts";
 import {WellActuallyHandler} from "./handlers/well-actually/well-actually-handler.ts";
 import {SixtyNineHandler} from "./handlers/sixty-nine/sixty-nine-handler.ts";
-import {test} from "bun:test";
+import {BeeMovieScriptHandler} from "./handlers/bee-movie/bee-movie-script-handler.ts";
 
 let savedSessionData: AtpSessionData | undefined;
 const BSKY_HANDLE: string = <string>Bun.env.BSKY_HANDLE
@@ -46,7 +41,7 @@ async function initialize() {
         const onlineText = new RichText({
             text: `Bot Online!`,
         });
-        let OnlinePost = await agent.post({
+        await agent.post({
             text: onlineText.text
         });
     }
@@ -62,11 +57,10 @@ async function initialize() {
     allPostsHandlerController = new HandlerController( agent, [
         SixtyNineHandler,
         BeeMovieScriptHandler
-
     ])
 
     testingHandlerController = new HandlerController(agent, [
-
+        TestHandler
     ])
 
     console.log("Agent Authenticated!")
@@ -78,7 +72,7 @@ await initialize();
 /**
  * The client and listener for the firehose
  */
-const firehoseClient = subscribeRepos(`wss://bsky.social`, {decodeRepoOps: true})
+const firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
 firehoseClient.on('message', (m: SubscribeReposMessage) => {
     if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
         m.ops.forEach((op: RepoOp) => {
@@ -87,20 +81,15 @@ firehoseClient.on('message', (m: SubscribeReposMessage) => {
             // @ts-ignore
             switch (payload?.$type) {
                 case 'app.bsky.feed.post':
-
                     if (AppBskyFeedPost.isRecord(payload)) {
-                        console.log(payload);
-                        // let repo = m.repo;
-                        // console.log(op);
-                        // console.log(m);
-                        // throw new Error();
-                        // if (payload.reply) {
-                        //     replyOnlyHandlerController.handle(op, repo)
-                        // }else{
-                        //     // testingHandlerController.handle(op, m.repo)
-                        //     postOnlyHandlerController.handle(op, repo)
-                        // }
-                        // allPostsHandlerController.handle(op, repo)
+                        let repo = m.repo;
+                        if (payload.reply) {
+                            replyOnlyHandlerController.handle(op, repo)
+                        }else{
+                            // testingHandlerController.handle(op, m.repo)
+                            postOnlyHandlerController.handle(op, repo)
+                        }
+                        allPostsHandlerController.handle(op, repo)
 
                         // testingHandlerController.handle(op, repo)
                     }

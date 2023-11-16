@@ -1,38 +1,59 @@
 import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails} from "../types.ts";
+import {PostDetails} from "../utils/types.ts";
+import {AbstractValidator} from "../validators/abstract-validator.ts";
 
-abstract class PayloadHandler{
+abstract class PayloadHandler {
     protected agentDid;
     protected agent: BskyAgent;
-    constructor(private triggerKey: string | object, private triggerValidator, private triggerAction ){}
 
-    setAgent(agent: BskyAgent){
+    constructor(private triggerValidators: Array<AbstractValidator>, private triggerAction) {
+    }
+
+    setAgent(agent: BskyAgent) {
         this.agent = agent;
         this.agentDid = agent.session?.did
     }
 
     shouldTrigger(input: string): boolean {
-        return this.triggerValidator(this.triggerKey, input)
+        let willTrigger = true;
+        this.triggerValidators.forEach((validator) => {
+            let response = validator.shouldTrigger(input)
+            if (!response) {
+                willTrigger = false
+            }
+        })
+        return willTrigger;
     }
 
     abstract async handle(op: RepoOp, repo: string): Promise<void>;
 
 }
 
-export class PostHandler extends PayloadHandler{
-    constructor(private triggerKey: string, private triggerValidator, private triggerAction, private requireFollowing = false) {
-        super(triggerKey, triggerValidator, triggerAction);
+export class PostHandler extends PayloadHandler {
+    protected FOLLOWERS: Array<string>
+
+    constructor(private triggerValidators: Array<AbstractValidator>, private triggerAction, private requireFollowing = true) {
+        super(triggerValidators, triggerAction);
         return this;
     }
 
-    postedByUser(postDetails: PostDetails){
+    setFollowers(followersInput: Array<string>) {
+        this.FOLLOWERS = followersInput
+        return this;
+    }
+
+    postedByUser(postDetails: PostDetails) {
         let postDid = postDetails.uri.split('/')[2];
         return postDid === this.agentDid
     }
 
-    postedByFollower(postDetails: PostDetails){
-
+    postedByFollower(postDetails: PostDetails) {
+        let userPosterDID = (postDetails.uri.match(/did:[^\/]*/) || [])[0]
+        if(!userPosterDID){
+            return false;
+        }
+        return this.FOLLOWERS.includes(userPosterDID);
     }
 
     async getPostDetails(op: RepoOp, repo: string): Promise<PostDetails> {
@@ -41,28 +62,45 @@ export class PostHandler extends PayloadHandler{
             repo: repo, rkey: rkey
         });
     }
+
     async handle(op: RepoOp, repo: string): Promise<void> {
         if (this.shouldTrigger(op.payload.text)) {
-            if(this.requireFollowing){
+            try {
+                let postDetails = await this.getPostDetails(op, repo);
+                if (!this.postedByUser(postDetails)) {
+                    if (this.requireFollowing) {
+                        if (this.postedByFollower(postDetails)) {
+                            this.triggerAction(this.agent, op, postDetails)
+                        }
+                    } else {
+                        this.triggerAction(this.agent, op, postDetails)
+                    }
+                }
+            } catch (exception) {
+                console.log(exception)
+            }
 
-            }
-            let postDetails = await this.getPostDetails(op, repo);
-            if(!this.postedByUser(postDetails)){
-                this.triggerAction(this.agent, op, postDetails)
-            }
         }
     }
 }
 
-export class HandlerController{
+export class HandlerController {
     constructor(private agent: BskyAgent, private handlers: Array<PayloadHandler>) {
-        this.handlers.forEach((handler) =>{
-            handler.setAgent(this.agent)
-        })
+        if (agent.session?.did) {
+            agent.getFollowers({actor: agent.session.did}, {}).then((resp) => {
+                let followers = resp.data.followers.map(profile => profile.did);
+                this.handlers.forEach((handler) => {
+                    handler.setAgent(this.agent)
+                    if (handler instanceof PostHandler) {
+                        handler.setFollowers(followers);
+                    }
+                })
+            });
+        }
     }
 
-    handle(op: RepoOp, repo: string){
-        this.handlers.forEach((handler) =>{
+    handle(op: RepoOp, repo: string) {
+        this.handlers.forEach((handler) => {
             handler.handle(op, repo)
         })
     }

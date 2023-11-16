@@ -1,13 +1,12 @@
 import {BskyAgent, RichText} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails} from "../../types.ts";
+import {PostDetails} from "../../utils/types.ts";
 import {BEE_MOVIE_SKEETS} from "./bee-movie-skeets.ts";
 import {PostHandler} from "../abstract-handler.ts";
-import {validatorInputIs} from "../trigger-validator-functions.ts";
+import {InputEqualsValidator} from "../../validators/string-validators.ts";
 
 export let BeeMovieScriptHandler = new PostHandler(
-    '!showmethebee',
-    validatorInputIs,
+    [new InputEqualsValidator('!showmethebee')],
     replyWithBeeMovieScript,
     false
 )

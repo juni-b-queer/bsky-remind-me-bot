@@ -1,13 +1,13 @@
 import {PostHandler} from "../abstract-handler.ts";
-import {validatorInputContains} from "../trigger-validator-functions.ts";
+
 import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails} from "../../types.ts";
-import {replyToPost} from "../../agent-post-functions.ts";
+import {PostDetails} from "../../utils/types.ts";
+import {replyToPost} from "../../utils/agent-post-functions.ts";
+import {InputContainsValidator} from "../../validators/string-validators.ts";
 
 export let SixtyNineHandler = new PostHandler(
-    ' 69 ',
-    validatorInputContains,
+    [new InputContainsValidator(' 69 ')],
     replyToSixtyNine,
     true
 )

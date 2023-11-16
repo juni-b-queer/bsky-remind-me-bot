@@ -1,13 +1,13 @@
 import {PostHandler} from "../abstract-handler.ts";
-import {validatorInputStartsWith} from "../trigger-validator-functions.ts";
 import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails} from "../../types.ts";
+import {PostDetails} from "../../utils/types.ts";
 import {REPLIES} from "./well-actually-replies.ts";
-import {replyToPost} from "../../agent-post-functions.ts";
+import {replyToPost} from "../../utils/agent-post-functions.ts";
+import {InputStartsWithValidator} from "../../validators/string-validators.ts";
 
-export let WellActuallyHandler = new PostHandler( 'wellactually',
-    validatorInputStartsWith,
+export let WellActuallyHandler = new PostHandler(
+    [new InputStartsWithValidator('wellactually')],
     replyToWellActually,
     true
 )
