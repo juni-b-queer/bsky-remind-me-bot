@@ -82,6 +82,7 @@ const firehoseClient = subscribeRepos(`wss://bsky.social`, {decodeRepoOps: true}
 firehoseClient.on('message', (m: SubscribeReposMessage) => {
     if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
         m.ops.forEach((op: RepoOp) => {
+            // console.log(op)
             let payload = op.payload;
             // @ts-ignore
             switch (payload?.$type) {
