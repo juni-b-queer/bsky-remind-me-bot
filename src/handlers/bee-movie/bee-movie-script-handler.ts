@@ -8,16 +8,15 @@ import {validatorInputIs} from "../trigger-validator-functions.ts";
 export let BeeMovieScriptHandler = new PostHandler(
     '!showmethebee',
     validatorInputIs,
-    replyWithBeeMovieScript
+    replyWithBeeMovieScript,
+    false
 )
 
 export async function replyWithBeeMovieScript(agent: BskyAgent, op: RepoOp, postDetails: PostDetails) {
-    let index = 0;
     let lastPost = postDetails;
     for (const skeetText of BEE_MOVIE_SKEETS) {
             lastPost = await recursiveReplyToPost(agent, lastPost, skeetText)
             console.log(lastPost)
-            index++;
             await Bun.sleep(50)
     }
 

@@ -5,7 +5,7 @@ import {PostDetails} from "../types.ts";
 abstract class PayloadHandler{
     protected agentDid;
     protected agent: BskyAgent;
-    constructor(private triggerKey: string, private triggerValidator, private triggerAction ){}
+    constructor(private triggerKey: string | object, private triggerValidator, private triggerAction ){}
 
     setAgent(agent: BskyAgent){
         this.agent = agent;
@@ -16,19 +16,12 @@ abstract class PayloadHandler{
         return this.triggerValidator(this.triggerKey, input)
     }
 
-    async getPostDetails(op: RepoOp, repo: string): Promise<PostDetails> {
-        let rkey = op.path.split('/')[1]
-        return await this.agent.getPost({
-            repo: repo, rkey: rkey
-        });
-    }
-
     abstract async handle(op: RepoOp, repo: string): Promise<void>;
 
 }
 
 export class PostHandler extends PayloadHandler{
-    constructor(private triggerKey: string, private triggerValidator, private triggerAction) {
+    constructor(private triggerKey: string, private triggerValidator, private triggerAction, private requireFollowing = false) {
         super(triggerKey, triggerValidator, triggerAction);
         return this;
     }
@@ -38,8 +31,21 @@ export class PostHandler extends PayloadHandler{
         return postDid === this.agentDid
     }
 
+    postedByFollower(postDetails: PostDetails){
+
+    }
+
+    async getPostDetails(op: RepoOp, repo: string): Promise<PostDetails> {
+        let rkey = op.path.split('/')[1]
+        return await this.agent.getPost({
+            repo: repo, rkey: rkey
+        });
+    }
     async handle(op: RepoOp, repo: string): Promise<void> {
         if (this.shouldTrigger(op.payload.text)) {
+            if(this.requireFollowing){
+
+            }
             let postDetails = await this.getPostDetails(op, repo);
             if(!this.postedByUser(postDetails)){
                 this.triggerAction(this.agent, op, postDetails)

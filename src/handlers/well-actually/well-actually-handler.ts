@@ -8,7 +8,8 @@ import {replyToPost} from "../../agent-post-functions.ts";
 
 export let WellActuallyHandler = new PostHandler( 'wellactually',
     validatorInputStartsWith,
-    replyToWellActually
+    replyToWellActually,
+    true
 )
 
 export function replyToWellActually(agent: BskyAgent, op: RepoOp, postDetails: PostDetails){

@@ -8,7 +8,8 @@ import {replyToPost} from "../../agent-post-functions.ts";
 export let SixtyNineHandler = new PostHandler(
     ' 69 ',
     validatorInputContains,
-    replyToSixtyNine
+    replyToSixtyNine,
+    true
 )
 
 export function replyToSixtyNine(agent: BskyAgent, op: RepoOp, postDetails: PostDetails){
