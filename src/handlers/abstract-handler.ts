@@ -2,12 +2,13 @@ import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {PostDetails} from "../utils/types.ts";
 import {AbstractValidator} from "../validators/abstract-validator.ts";
+import {AbstractTriggerAction} from "../actions/abstract-trigger-action.ts";
 
 abstract class PayloadHandler {
     protected agentDid;
     protected agent: BskyAgent;
 
-    constructor(private triggerValidators: Array<AbstractValidator>, private triggerAction) {
+    constructor(private triggerValidators: Array<AbstractValidator>, private triggerActions: Array<AbstractTriggerAction>) {
     }
 
     setAgent(agent: BskyAgent) {
@@ -26,6 +27,12 @@ abstract class PayloadHandler {
         return willTrigger;
     }
 
+    runActions(op: RepoOp, postDetails: PostDetails){
+        this.triggerActions.forEach((action) => {
+            action.handle(this.agent, op, postDetails)
+        })
+    }
+
     abstract async handle(op: RepoOp, repo: string): Promise<void>;
 
 }
@@ -33,8 +40,8 @@ abstract class PayloadHandler {
 export class PostHandler extends PayloadHandler {
     protected FOLLOWERS: Array<string>
 
-    constructor(private triggerValidators: Array<AbstractValidator>, private triggerAction, private requireFollowing = true) {
-        super(triggerValidators, triggerAction);
+    constructor(private triggerValidators: Array<AbstractValidator>, private triggerActions: Array<AbstractTriggerAction>, private requireFollowing = true) {
+        super(triggerValidators, triggerActions);
         return this;
     }
 
@@ -70,10 +77,10 @@ export class PostHandler extends PayloadHandler {
                 if (!this.postedByUser(postDetails)) {
                     if (this.requireFollowing) {
                         if (this.postedByFollower(postDetails)) {
-                            this.triggerAction(this.agent, op, postDetails)
+                            this.runActions(op, postDetails)
                         }
                     } else {
-                        this.triggerAction(this.agent, op, postDetails)
+                        this.runActions(op, postDetails)
                     }
                 }
             } catch (exception) {

@@ -3,10 +3,11 @@ import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {PostDetails} from "../../utils/types.ts";
 import {InputStartsWithValidator} from "../../validators/string-validators.ts";
+import {LogInputTextAction, LogPostDetailsAction, LogRepoOperationAction} from "../../actions/logging-actions.ts";
 
 export let TestHandler = new PostHandler(
     [new InputStartsWithValidator('h')],
-    replyToTestHandler,
+    [new LogPostDetailsAction(), new LogRepoOperationAction(), new LogInputTextAction('Logged text')],
     true
 )
 

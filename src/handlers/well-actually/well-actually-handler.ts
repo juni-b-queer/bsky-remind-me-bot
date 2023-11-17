@@ -5,12 +5,15 @@ import {PostDetails} from "../../utils/types.ts";
 import {REPLIES} from "./well-actually-replies.ts";
 import {replyToPost} from "../../utils/agent-post-functions.ts";
 import {InputStartsWithValidator} from "../../validators/string-validators.ts";
+import {ReplyWithGeneratedTextAction} from "../../actions/reply-actions.ts";
 
 export let WellActuallyHandler = new PostHandler(
     [new InputStartsWithValidator('wellactually')],
-    replyToWellActually,
+    [new ReplyWithGeneratedTextAction(()=> `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`)],
     true
 )
+
+
 
 export function replyToWellActually(agent: BskyAgent, op: RepoOp, postDetails: PostDetails){
     let response = `well actually ${REPLIES[Math.floor(Math.random() * (REPLIES.length - 1))]}`;

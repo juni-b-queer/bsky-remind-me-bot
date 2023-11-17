@@ -5,10 +5,13 @@ import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeR
 import {PostDetails} from "../../utils/types.ts";
 import {replyToPost} from "../../utils/agent-post-functions.ts";
 import {InputContainsValidator} from "../../validators/string-validators.ts";
+import {ReplyWithInputAction} from "../../actions/reply-actions.ts";
+
+
 
 export let SixtyNineHandler = new PostHandler(
     [new InputContainsValidator(' 69 ')],
-    replyToSixtyNine,
+    [new ReplyWithInputAction('Nice. 😎')],
     true
 )
 
