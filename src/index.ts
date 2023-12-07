@@ -60,7 +60,7 @@ async function initialize() {
     ])
 
     testingHandlerController = new HandlerController(agent, [
-        TestHandler
+        // TestHandler
     ])
 
     console.log("Agent Authenticated!")
