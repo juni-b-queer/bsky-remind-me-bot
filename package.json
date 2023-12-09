@@ -3,6 +3,7 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
+    "run": "bun run src/index.ts",
     "build": "bun build --target=bun ./src/index.ts --outfile=./build/index.ts"
   },
   "devDependencies": {
@@ -13,6 +14,11 @@
   },
   "dependencies": {
     "@atproto/api": "^0.6.23",
-    "atproto-firehose": "^0.2.2"
+    "atproto-firehose": "^0.2.2",
+    "date-fns": "^2.30.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.6.5",
+    "sequelize": "^6.35.1",
+    "words-to-numbers": "^1.5.1"
   }
 }

@@ -2,10 +2,13 @@ import {AbstractValidator} from "./abstract-validator.ts";
 import {flattenTextUpdated} from "../utils/text-utils.ts";
 
 export class InputStartsWithValidator extends AbstractValidator{
-    constructor(private triggerKey: string) {
+    constructor(private triggerKey: string, private strict: boolean = false) {
         super();
     }
     shouldTrigger(input: string): boolean {
+        if(this.strict){
+            return input.startsWith(this.triggerKey)
+        }
         const flatText = flattenTextUpdated(this.triggerKey, input)
         return flatText.startsWith(this.triggerKey)
     }
