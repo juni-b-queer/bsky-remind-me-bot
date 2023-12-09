@@ -12,7 +12,7 @@ services:
       MYSQL_PASSWORD: "${DB_PASSWORD}"
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
     volumes:
-      - "volmysql:/var/lib/mysql"
+      - "./mysql/db:/var/lib/mysql"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping"]
     networks:
@@ -28,6 +28,6 @@ networks:
   bun:
     driver: bridge
 
-volumes:
-  volmysql:
-    driver: local
+#volumes:
+#  volmysql:
+#    driver: local
