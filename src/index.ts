@@ -114,8 +114,12 @@ setInterval(async function () {
             }
         });
         for (let post of postsToRemind){
-            console.log(<PostDetails>post.postDetails);
-            await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+            try{
+                console.log(<PostDetails>post.postDetails);
+                await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+            }catch (e) {
+                console.log(e)
+            }
             post.repliedAt = new Date()
             post.save()
         }
