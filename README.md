@@ -1,4 +1,10 @@
-# Bun Firehose Bot
+# RemindMe! Bot
+
+Reply to any skeet with "RemindMe! # years, # months, # weeks, # days, # hours, # minutes" and the bot will remind you after that time has passed by replying to you!
+
+### Everything below this in the README is out of date, it's originally the readme for the bun firehose reply bot I made, that can also be found in my github.
+
+
 
 ## Quickstart
 This was built to use the [Bun](https://bun.sh) runtime instead of NodeJs! Make sure you have Bun installed!

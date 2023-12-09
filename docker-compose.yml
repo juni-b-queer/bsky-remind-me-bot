@@ -14,7 +14,17 @@ services:
       - "volmysql:/var/lib/mysql"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping"]
+    networks:
+      - bun
 
+  remindbot:
+    build: .
+    networks:
+      - bun
+
+networks:
+  bun:
+    driver: bridge
 
 volumes:
   volmysql:

@@ -1,5 +1,4 @@
 import { add, addDays, addWeeks, addMonths } from "date-fns";
-import wordsToNumbers from "words-to-numbers";
 
 export function flattenTextUpdated(triggerKey: string, input: string) {
     if (!containsNumbers(triggerKey)) {
@@ -61,7 +60,7 @@ export function convertTextToDate(timeString: string, currentTime: Date = new Da
             }
 
             if(isNaN(Number(value))) {
-                value = String(wordsToNumbers(value));
+                value = convertWordsToNumbers(value)  // Using words-to-numbers function to convert words to numbers
             }
 
             if (units.includes(timeUnit)){
@@ -81,4 +80,49 @@ export function convertTextToDate(timeString: string, currentTime: Date = new Da
 
     // Convert the date to datetime string
     return date.toISOString();
+}
+
+export function convertWordsToNumbers(numberString: string): string {
+
+    const units: { [key: string]: number } = {
+        zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+        eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13,
+        fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17,
+        eighteen: 18, nineteen: 19,
+    };
+
+    const tens: { [key: string]: number } = {
+        twenty: 20, thirty: 30, forty: 40, fifty: 50,
+        sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+    };
+
+    const scales: { [key: string]: number } = {
+        hundred: 100, thousand: 1000,
+        million: 1000000, billion: 1000000000,
+    };
+
+    let result = 0;
+    let current = 0;
+    const words = numberString.split(/[\s-]+/);
+
+    words.forEach(word => {
+        const unit = units[word];
+        const scale = scales[word];
+        const ten = tens[word];
+
+        if (unit !== undefined) {
+            current += unit;
+        } else if (ten !== undefined) {
+            current += ten;
+        } else if (scale !== undefined) {
+            current *= scale;
+            result += current;
+            current = 0;
+        } else {
+            return "";
+        }
+    });
+
+    result += current;
+    return result.toString();
 }

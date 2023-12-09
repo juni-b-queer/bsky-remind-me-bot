@@ -30,9 +30,17 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
         })
         // reply to post based on reminder timing
         let reminderDateObject = new Date(reminderDate)
-        let humanReadableDateString = format(reminderDateObject, "MMMM do, yyyy 'at' HH:mm");
+        let humanReadableDateString = reminderDateObject.toLocaleString('en-US', {
+            timeZone: 'America/Chicago',
+            hour12: true, // Use 24-hour time format
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        })
         let replyAction = new ReplyWithInputAction(
-            `Reminder set for ${humanReadableDateString}`
+            `Reminder set for ${humanReadableDateString} Central`
         )
         await replyAction.handle(agent, op, postDetails);
     }

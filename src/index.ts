@@ -25,14 +25,23 @@ let remindBotHandlerController: HandlerController;
  */
 remindBotAgentDetails = createAgent(remindBotAgentDetails)
 
-
-async function initialize() {
+async function authorizeDatabase(){
     try {
         await sequelize.authenticate();
         console.log('Connection has been established successfully.');
+        await Post.sync({alter: true})
+        return true;
     } catch (error) {
         console.error('Unable to connect to the database:', error);
+        await setTimeout(async () => {
+            await authorizeDatabase()
+        }, 10000)
+        return false;
     }
+}
+
+async function initialize() {
+    await authorizeDatabase();
 
     // Here is where we're initializing the handler functions
     remindBotAgentDetails = await authenticateAgent(remindBotAgentDetails)
@@ -44,12 +53,19 @@ async function initialize() {
         ])
     }
 
-    await Post.sync({alter: true})
+
 
     console.log("Initialized!")
 }
 
-await initialize();
+try{
+    await initialize();
+}catch (e) {
+    setTimeout(async function(){
+        await initialize()
+    }, 30000)
+}
+
 
 
 /**

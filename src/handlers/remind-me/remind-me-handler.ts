@@ -6,5 +6,5 @@ import {InsertPostReminderInToDatabase} from "../../database/database-handler-ac
 export let RemindMeHandler = new PostHandler(
     [new InputStartsWithValidator('RemindMe!', true)],
     [new LogPostDetailsAction(), new InsertPostReminderInToDatabase()],
-    true
+    false
 )
