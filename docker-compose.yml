@@ -21,6 +21,8 @@ services:
   remindbot:
     build: .
     restart: unless-stopped
+    depends_on:
+      - mysql
     networks:
       - bun
 
