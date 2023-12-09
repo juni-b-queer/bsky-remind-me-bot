@@ -11,8 +11,18 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
 
     async handle(agent: BskyAgent, op: RepoOp, postDetails: PostDetails): Promise<any> {
         // Get timing from post
-        let timeString = postDetails.value.text.split('! ')[1]
-        let reminderDate = convertTextToDate(timeString)
+        let timeString: string;
+        let reminderDate: string;
+        try{
+             timeString = postDetails.value.text.split('! ')[1]
+             reminderDate = convertTextToDate(timeString)
+        }catch (e) {
+            console.log(e)
+            let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
+            await replyAction.handle(agent, op, postDetails);
+            return;
+        }
+
 
         if(reminderDate === ""){
             //reply with
