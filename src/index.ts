@@ -1,5 +1,10 @@
 import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent} from "@atproto/api";
-import {ComAtprotoSyncSubscribeRepos, subscribeRepos, SubscribeReposMessage,} from 'atproto-firehose'
+import {
+    ComAtprotoSyncSubscribeRepos,
+    subscribeRepos,
+    SubscribeReposMessage,
+    XrpcEventStreamClient,
+} from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {HandlerController} from "./handlers/abstract-handler.ts";
 import {Op} from "sequelize";
@@ -19,6 +24,7 @@ let remindBotAgentDetails: AgentDetails = {
 }
 
 let remindBotHandlerController: HandlerController;
+let lastMessage = Date.now()
 
 /**
  * Agent for reminders
@@ -71,32 +77,41 @@ try{
 /**
  * The client and listener for the firehose
  */
-const firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
-firehoseClient.on('message', (m: SubscribeReposMessage) => {
-    if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
-        m.ops.forEach((op: RepoOp) => {
-            // console.log(op)
-            let payload = op.payload;
-            // @ts-ignore
-            switch (payload?.$type) {
-                case 'app.bsky.feed.post':
-                    if (AppBskyFeedPost.isRecord(payload)) {
-                        let repo = m.repo;
-                        if (payload.reply) {
-                            remindBotHandlerController.handle(op, repo)
-                        }
-                    }
-            }
-        })
-    }
-})
+let firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
 
-let interval  = 1000
+setFirehoseListener(firehoseClient)
+
+function setFirehoseListener(firehoseClient: XrpcEventStreamClient){
+    firehoseClient.on('message', (m: SubscribeReposMessage) => {
+        if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
+            m.ops.forEach((op: RepoOp) => {
+                // console.log(op)
+                let payload = op.payload;
+                lastMessage = Date.now()
+                // @ts-ignore
+                switch (payload?.$type) {
+                    case 'app.bsky.feed.post':
+                        if (AppBskyFeedPost.isRecord(payload)) {
+                            let repo = m.repo;
+                            if (payload.reply) {
+                                remindBotHandlerController.handle(op, repo)
+                            }
+                        }
+                }
+            })
+        }
+    })
+}
+
+
+
+
+let interval  = 500
+let MAX_TIME_BETWEEN = 100;
 setInterval(async function () {
     console.log("Checking for posts to remind");
     if(remindBotAgentDetails.agent){
         // Check for posts that require reminding
-        let currentTime = new Date()
         let postsToRemind = await Post.findAll({
             where: {
                 [Op.and]: [
@@ -123,6 +138,17 @@ setInterval(async function () {
             post.repliedAt = new Date()
             post.save()
         }
+    }
+
+    console.log("Checking if firehose is connected")
+    let currentTime = Date.now();
+    let diff = currentTime - lastMessage;
+    console.log(`Time since last received message: ${diff}`)
+    if(diff > MAX_TIME_BETWEEN){
+        console.log('Restarting subscription')
+        firehoseClient.removeAllListeners();
+        firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
+        setFirehoseListener(firehoseClient)
     }
 
 }, 60 * interval)
