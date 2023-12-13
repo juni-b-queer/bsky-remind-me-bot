@@ -17,10 +17,10 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
         let reminderDate: string;
         try{
             let postText: string = postDetails.value.text
-            if(postText.startsWith("!TRemindMe")){
-                timeString = postText.replace("!TRemindMe ", "")
+            if(postText.startsWith("!RemindMe")){
+                timeString = postText.replace("!RemindMe ", "")
             }else{
-                timeString = postText.replace("TRemindMe! ", "")
+                timeString = postText.replace("RemindMe! ", "")
             }
 
             reminderDate = convertTextToDate(timeString)
