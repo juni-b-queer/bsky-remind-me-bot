@@ -27,10 +27,10 @@ abstract class PayloadHandler {
         return willTrigger;
     }
 
-    runActions(op: RepoOp, postDetails: PostDetails){
-        this.triggerActions.forEach((action) => {
-            action.handle(this.agent, op, postDetails)
-        })
+    async runActions(op: RepoOp, postDetails: PostDetails) {
+        for (const action of this.triggerActions) {
+            await action.handle(this.agent, op, postDetails)
+        }
     }
 
     abstract async handle(op: RepoOp, repo: string): Promise<void>;
