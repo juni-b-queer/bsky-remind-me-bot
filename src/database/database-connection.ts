@@ -20,6 +20,10 @@ export const Post = sequelize.define('Post', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    did:{
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     postDetails:{
       type: DataTypes.JSON,
       allowNull: false

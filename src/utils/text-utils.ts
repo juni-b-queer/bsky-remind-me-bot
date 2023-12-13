@@ -126,3 +126,13 @@ export function convertWordsToNumbers(numberString: string): string {
     result += current;
     return result.toString();
 }
+
+export function trimCommandInput(input: string, command: string): string|boolean{
+    if(input.startsWith(`!${command}`)){
+        return input.replace(`!${command}`, "").trim()
+    }else if(input.startsWith(`${command}!`)){
+        return input.replace(`${command}!`, "").trim()
+    }else{
+        return false;
+    }
+}

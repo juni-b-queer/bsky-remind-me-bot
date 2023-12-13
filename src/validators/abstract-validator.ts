@@ -1,13 +1,17 @@
 import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails} from "../utils/types.ts";
+import {PostDetails, ValidatorInput} from "../utils/types.ts";
 
 export abstract class AbstractValidator {
 
     constructor() {
     }
 
-    abstract shouldTrigger(input: string): boolean
+    getTextFromPost(op: RepoOp){
+        return op.payload.text;
+    }
+
+    abstract async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean>
 
 }
 
@@ -21,8 +25,8 @@ export class SimpleFunctionValidator extends AbstractValidator {
         super()
     }
 
-    shouldTrigger(input: string): boolean {
-        return this.triggerValidator(input)
+    async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean> {
+        return this.triggerValidator(validatorInput)
     }
 
 }
@@ -36,13 +40,14 @@ export class OrValidator extends AbstractValidator{
         super();
     }
 
-    shouldTrigger(input: string): boolean {
+    async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean> {
         let willTrigger = false;
-        this.validators.forEach((validator) => {
-            if(validator.shouldTrigger(input)){
+        for (const validator of this.validators) {
+            let currentValidatorWillTrigger = await validator.shouldTrigger(validatorInput);
+            if(currentValidatorWillTrigger){
                 willTrigger = true;
             }
-        })
+        }
         return willTrigger;
     }
 }

@@ -40,7 +40,7 @@ async function authorizeDatabase(){
         await Post.sync({alter: true})
         return true;
     } catch (error) {
-        debugLog("INIT", 'Connection to Database has been established successfully.', true)
+        debugLog("INIT", 'Connection to Database FAILED.', true)
         console.error('Unable to connect to the database:', error);
         await setTimeout(async () => {
             await authorizeDatabase()
@@ -102,8 +102,6 @@ function setFirehoseListener(firehoseClient: XrpcEventStreamClient){
         }
     })
 }
-
-
 
 
 let interval  = 500

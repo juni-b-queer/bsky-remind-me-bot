@@ -3,7 +3,7 @@ import {
     containsNumbers,
     containsPunctuation, convertTextToDate,
     flattenTextUpdated,
-    removePunctuation
+    removePunctuation, trimCommandInput
 } from "../../src/utils/text-utils.ts";
 import {add} from "date-fns";
 
@@ -60,6 +60,34 @@ describe("flattenTextUpdated Handles keys", () => {
         expect(flattenTextUpdated(key, input)).toBe(expected);
     });
 
+});
+
+
+describe("Trim Command From Input", () => {
+    let command = "TestCommand";
+    let arbitraryText = 'hello world this is june'
+    test("!{command} in front removes and trims", () => {
+        let input = `!${command} ${arbitraryText}`
+        expect(trimCommandInput(input, command)).toBe(arbitraryText);
+    });
+    test("{command}! removes and trims", () => {
+        let input = `${command}! ${arbitraryText}`
+        expect(trimCommandInput(input, command)).toBe(arbitraryText);
+    });
+
+    test("!{command} with additional command", () => {
+        let input = `!${command} ${arbitraryText} !${command}`
+        expect(trimCommandInput(input, command)).toBe(`${arbitraryText} !${command}`);
+    });
+    test("{command}! with time string", () => {
+        let input = `${command}! 1 hour, 30 minutes`
+        expect(trimCommandInput(input, command)).toBe('1 hour, 30 minutes');
+    });
+
+    test("Invalid input returns false", () => {
+        let input = `${command}! 1 hour, 30 minutes`
+        expect(trimCommandInput(input, command)).toBe('1 hour, 30 minutes');
+    });
 });
 
 describe("convertTextToDate Correctly generates the right date", () => {
