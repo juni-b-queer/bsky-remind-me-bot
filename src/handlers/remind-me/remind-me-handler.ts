@@ -7,8 +7,8 @@ import {getHumanReadableDateTimeStamp} from "../../utils/time-utils.ts";
 import {OrValidator} from "../../validators/abstract-validator.ts";
 
 export let RemindMeHandler = new PostHandler(
-    [new OrValidator([new InputStartsWithValidator('RemindMe!', true), new InputStartsWithValidator('!RemindMe', true)])],
-    [new InsertPostReminderInToDatabase(), new LogPostDetailsAction(), new ReplyWithDataFromDatabase(Post, 'reminderDate', responseGenerator)],
+    [new OrValidator([new InputStartsWithValidator('TRemindMe!', true), new InputStartsWithValidator('!TRemindMe', true)])],
+    [new InsertPostReminderInToDatabase(), new ReplyWithDataFromDatabase(Post, 'reminderDate', responseGenerator)],
     false
 )
 

@@ -2,7 +2,8 @@ import {DataTypes, Sequelize} from "sequelize";
 
 export const sequelize = new Sequelize(<string>Bun.env.DB_DATABASE, <string>Bun.env.DB_USERNAME, <string>Bun.env.DB_PASSWORD, {
     host: <string>Bun.env.DB_HOST,
-    dialect: 'mysql'
+    dialect: 'mysql',
+    logging: false
 });
 export const Post = sequelize.define('Post', {
     // Model attributes are defined here

@@ -7,6 +7,7 @@ import {ReplyWithInputAction} from "../actions/reply-actions.ts";
 import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
 import {replyToPost} from "../utils/agent-post-functions.ts";
+import {debugLog} from "../utils/logging-utils.ts";
 
 export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
 
@@ -16,17 +17,17 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
         let reminderDate: string;
         try{
             let postText: string = postDetails.value.text
-            console.log(postText)
-            if(postText.startsWith("!RemindMe")){
-                console.log(postText.replace("!RemindMe ", ""))
-                timeString = postText.replace("!RemindMe ", "")
+            if(postText.startsWith("!TRemindMe")){
+                timeString = postText.replace("!TRemindMe ", "")
             }else{
-                timeString = postText.replace("RemindMe! ", "")
+                timeString = postText.replace("TRemindMe! ", "")
             }
 
             reminderDate = convertTextToDate(timeString)
         }catch (e) {
-            console.log(e)
+            debugLog("INSERT", e, true)
+            // console.log("ERROR - Exception")
+            console.log(postDetails)
             let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
             await replyAction.handle(agent, op, postDetails);
             return;
@@ -35,18 +36,22 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
 
         if(reminderDate === ""){
             //reply with
+            debugLog("INSERT", "empty reminder date", true)
+            console.log(postDetails)
             let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
             await replyAction.handle(agent, op, postDetails);
             return;
         }
 
         // Save post to database
+
         await Post.create({
             cid: postDetails.cid,
             uri: postDetails.uri,
             postDetails: postDetails,
             reminderDate: reminderDate
         })
+        debugLog("INSERT", `Created Post with CID: ${postDetails.cid}`)
     }
 }
 
@@ -65,11 +70,14 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
             }
         });
         if(!post){
+            debugLog("REPLY", "Post not found in database", true)
             return;
         }
 
         let columnValue = post[this.column];
         let responseText = this.formattingAction(columnValue)
-        return await replyToPost(agent, postDetails, responseText);
+        await replyToPost(agent, postDetails, responseText)
+        debugLog("REPLY", `Responded with: ${responseText}`);
+        return;
     }
 }

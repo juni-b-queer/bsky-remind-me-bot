@@ -1,5 +1,6 @@
 import {AgentDetails} from "./types.ts";
 import {AtpSessionData, AtpSessionEvent, BskyAgent} from "@atproto/api";
+import {debugLog} from "./logging-utils.ts";
 
 export function createAgent(agentDetails: AgentDetails): AgentDetails{
     agentDetails.agent = new BskyAgent({
@@ -17,7 +18,8 @@ export async function authenticateAgent(agentDetails: AgentDetails): Promise<Age
     if (!agentDetails.sessionData) {
         throw new Error('Could not retrieve bluesky session data for reply bot')
     } else {
-        console.log(`${agentDetails.name} is authenticated!`)
+        debugLog('AGENT', `${agentDetails.name} is authenticated!`)
+        // console.log()
     }
     await agentDetails.agent.resumeSession(agentDetails.sessionData)
     return agentDetails;
