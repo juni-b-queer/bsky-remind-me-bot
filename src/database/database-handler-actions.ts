@@ -57,7 +57,6 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
     }
 
     async handle(agent: BskyAgent, op: RepoOp, postDetails: PostDetails): Promise<any> {
-        console.log(postDetails)
         let post = await Post.findOne({
             where: {
                 cid: {
@@ -65,7 +64,6 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
                 },
             }
         });
-        console.log(post)
         if(!post){
             return;
         }
