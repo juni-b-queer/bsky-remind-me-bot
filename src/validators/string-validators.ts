@@ -3,23 +3,26 @@ import {flattenTextUpdated} from "../utils/text-utils.ts";
 import {ValidatorInput} from "../utils/types.ts";
 
 
-export class InputIsCommandValidator extends AbstractValidator{
+export class InputIsCommandValidator extends AbstractValidator {
     constructor(private triggerKey: string) {
         super();
     }
+
     async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean> {
         let input = this.getTextFromPost(validatorInput.op)
         return input.startsWith(`!${this.triggerKey}`) || input.startsWith(`${this.triggerKey}!`)
     }
 
 }
-export class InputStartsWithValidator extends AbstractValidator{
+
+export class InputStartsWithValidator extends AbstractValidator {
     constructor(private triggerKey: string, private strict: boolean = false) {
         super();
     }
+
     async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean> {
         let input = this.getTextFromPost(validatorInput.op)
-        if(this.strict){
+        if (this.strict) {
             return input.startsWith(this.triggerKey)
         }
         const flatText = flattenTextUpdated(this.triggerKey, input)
@@ -28,10 +31,11 @@ export class InputStartsWithValidator extends AbstractValidator{
 
 }
 
-export class InputContainsValidator extends AbstractValidator{
+export class InputContainsValidator extends AbstractValidator {
     constructor(private triggerKey: string) {
         super();
     }
+
     async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean> {
         let input = this.getTextFromPost(validatorInput.op)
 
@@ -40,10 +44,11 @@ export class InputContainsValidator extends AbstractValidator{
     }
 }
 
-export class InputEqualsValidator extends AbstractValidator{
+export class InputEqualsValidator extends AbstractValidator {
     constructor(private triggerKey: string) {
         super();
     }
+
     async shouldTrigger(validatorInput: ValidatorInput): Promise<boolean> {
         let input = this.getTextFromPost(validatorInput.op)
 

@@ -3,7 +3,7 @@ import {BskyAgent, RichText} from "@atproto/api";
 
 /**
  * Replies to the skeet
-**/
+ **/
 
 export async function replyToPost(agent: BskyAgent, currentPost: PostDetails, replyTextInput: string) {
     const replyText = new RichText({
@@ -21,7 +21,7 @@ export async function replyToPost(agent: BskyAgent, currentPost: PostDetails, re
         }
     }
 
-    if(currentPost.value.reply){
+    if (currentPost.value.reply) {
         reply.root = currentPost.value.reply.root
     }
 
@@ -31,7 +31,7 @@ export async function replyToPost(agent: BskyAgent, currentPost: PostDetails, re
     });
 }
 
-export async function getPostDetails(agent: BskyAgent, op: RepoOp, repo: string){
+export async function getPostDetails(agent: BskyAgent, op: RepoOp, repo: string) {
     let rkey = op.path.split('/')[1]
     return await agent.getPost({
         repo: repo, rkey: rkey

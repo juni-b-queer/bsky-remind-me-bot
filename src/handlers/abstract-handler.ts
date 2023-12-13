@@ -59,7 +59,7 @@ export class PostHandler extends PayloadHandler {
 
     postedByFollower(postDetails: PostDetails) {
         let userPosterDID = getPosterDID(postDetails)
-        if(!userPosterDID){
+        if (!userPosterDID) {
             return false;
         }
         return this.FOLLOWERS.includes(userPosterDID);
@@ -96,7 +96,8 @@ export class HandlerController {
     constructor(private agent: BskyAgent, private handlers: Array<PayloadHandler>) {
         this.refreshFollowers()
     }
-    refreshFollowers(){
+
+    refreshFollowers() {
         if (this.agent.session?.did) {
             this.agent.getFollowers({actor: this.agent.session.did}, {}).then((resp) => {
                 let followers = resp.data.followers.map(profile => profile.did);

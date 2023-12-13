@@ -10,6 +10,6 @@ export let RemindMeHandler = new PostHandler(
     false
 )
 
-export function responseGenerator(inputDate){
+export function responseGenerator(inputDate) {
     return `Reminder set for ${getHumanReadableDateTimeStamp(inputDate)}`
 }

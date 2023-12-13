@@ -32,7 +32,7 @@ let lastMessage = Date.now()
  */
 remindBotAgentDetails = createAgent(remindBotAgentDetails)
 
-async function authorizeDatabase(){
+async function authorizeDatabase() {
     try {
         await sequelize.authenticate();
         debugLog("INIT", 'Connection to Database has been established successfully.')
@@ -54,9 +54,9 @@ async function initialize() {
 
     // Here is where we're initializing the handler functions
     remindBotAgentDetails = await authenticateAgent(remindBotAgentDetails)
-    if(!remindBotAgentDetails.agent){
+    if (!remindBotAgentDetails.agent) {
         throw new Error(`Could not get agent from ${remindBotAgentDetails.name}`)
-    }else{
+    } else {
         remindBotHandlerController = new HandlerController(remindBotAgentDetails.agent, [
             RemindMeHandler
         ])
@@ -64,14 +64,13 @@ async function initialize() {
     debugLog("INIT", 'Initialized!')
 }
 
-try{
+try {
     await initialize();
-}catch (e) {
-    setTimeout(async function(){
+} catch (e) {
+    setTimeout(async function () {
         await initialize()
     }, 30000)
 }
-
 
 
 /**
@@ -81,7 +80,7 @@ let firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
 
 setFirehoseListener(firehoseClient)
 
-function setFirehoseListener(firehoseClient: XrpcEventStreamClient){
+function setFirehoseListener(firehoseClient: XrpcEventStreamClient) {
     firehoseClient.on('message', (m: SubscribeReposMessage) => {
         if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
             m.ops.forEach((op: RepoOp) => {
@@ -104,11 +103,11 @@ function setFirehoseListener(firehoseClient: XrpcEventStreamClient){
 }
 
 
-let interval  = 500
+let interval = 500
 let MAX_TIME_BETWEEN = 100;
 setInterval(async function () {
     // console.log("Checking for posts to remind");
-    if(remindBotAgentDetails.agent){
+    if (remindBotAgentDetails.agent) {
         // Check for posts that require reminding
         let postsToRemind = await Post.findAll({
             where: {
@@ -126,15 +125,15 @@ setInterval(async function () {
                 ],
             }
         });
-        debugLog('SCHEDULE', `Found ${postsToRemind.length} posts to remind` )
+        debugLog('SCHEDULE', `Found ${postsToRemind.length} posts to remind`)
         // console.log(`Found ${postsToRemind.length} posts to remind`)
-        for (let post: Post of postsToRemind){
-            try{
-                debugLog('SCHEDULE', `Reminding post cid: ${post.cid}` )
+        for (let post: Post of postsToRemind) {
+            try {
+                debugLog('SCHEDULE', `Reminding post cid: ${post.cid}`)
                 // console.log(`Reminding post cid: ${post.cid}`)
                 await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
-            }catch (e) {
-                debugLog('SCHEDULE', `Failed to remind post`, true )
+            } catch (e) {
+                debugLog('SCHEDULE', `Failed to remind post`, true)
                 console.log(`ERROR - Failed to remind post`)
             }
             post.repliedAt = new Date()
@@ -144,15 +143,15 @@ setInterval(async function () {
 
     let currentTime = Date.now();
     let diff = currentTime - lastMessage;
-    debugLog('SCHEDULE', `Time since last received message: ${diff}` )
+    debugLog('SCHEDULE', `Time since last received message: ${diff}`)
     // console.log(`Time since last received message: ${diff}`)
-    if(diff > MAX_TIME_BETWEEN){
-        debugLog('SCHEDULE', 'Restarting subscription' )
+    if (diff > MAX_TIME_BETWEEN) {
+        debugLog('SCHEDULE', 'Restarting subscription')
         // console.log('Restarting subscription')
         firehoseClient.removeAllListeners();
         firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
         setFirehoseListener(firehoseClient)
-        debugLog('SCHEDULE', 'Subscription Restarted' )
+        debugLog('SCHEDULE', 'Subscription Restarted')
         // console.log('Subscription Restarted')
     }
 

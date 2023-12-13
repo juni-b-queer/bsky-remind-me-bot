@@ -11,9 +11,9 @@ export type AgentDetails = {
     name: string,
     handle: string,
     password: string,
-    did: string|undefined,
-    sessionData: AtpSessionData|undefined,
-    agent: BskyAgent|undefined
+    did: string | undefined,
+    sessionData: AtpSessionData | undefined,
+    agent: BskyAgent | undefined
 }
 
 export type ValidatorInput = {

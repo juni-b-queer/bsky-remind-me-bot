@@ -20,19 +20,19 @@ export const Post = sequelize.define('Post', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    did:{
+    did: {
         type: DataTypes.STRING,
         allowNull: true
     },
-    postDetails:{
-      type: DataTypes.JSON,
-      allowNull: false
+    postDetails: {
+        type: DataTypes.JSON,
+        allowNull: false
     },
     reminderDate: {
         type: DataTypes.DATE,
         allowNull: false
     },
-    repliedAt:{
+    repliedAt: {
         type: DataTypes.DATE,
         allowNull: true
     }

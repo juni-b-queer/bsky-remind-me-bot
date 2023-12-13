@@ -7,7 +7,7 @@ export abstract class AbstractValidator {
     constructor() {
     }
 
-    getTextFromPost(op: RepoOp){
+    getTextFromPost(op: RepoOp) {
         return op.payload.text;
     }
 
@@ -35,7 +35,7 @@ export class SimpleFunctionValidator extends AbstractValidator {
  * A validator in which you pass in multiple other validators
  *  and if any of them should trigger, it will return true
  */
-export class OrValidator extends AbstractValidator{
+export class OrValidator extends AbstractValidator {
     constructor(private validators: Array<AbstractValidator>) {
         super();
     }
@@ -44,7 +44,7 @@ export class OrValidator extends AbstractValidator{
         let willTrigger = false;
         for (const validator of this.validators) {
             let currentValidatorWillTrigger = await validator.shouldTrigger(validatorInput);
-            if(currentValidatorWillTrigger){
+            if (currentValidatorWillTrigger) {
                 willTrigger = true;
             }
         }
