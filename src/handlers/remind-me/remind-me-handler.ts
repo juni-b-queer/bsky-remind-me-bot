@@ -4,9 +4,10 @@ import {InsertPostReminderInToDatabase, ReplyWithDataFromDatabase} from "../../d
 import {Post} from "../../database/database-connection.ts";
 import {getHumanReadableDateTimeStamp} from "../../utils/time-utils.ts";
 
+const COMMAND = "RemindMe"
 export let RemindMeHandler = new PostHandler(
-    [new InputIsCommandValidator('TRemindMe')],
-    [new InsertPostReminderInToDatabase("TRemindMe"), new ReplyWithDataFromDatabase(Post, 'reminderDate', responseGenerator)],
+    [new InputIsCommandValidator(COMMAND)],
+    [new InsertPostReminderInToDatabase(COMMAND), new ReplyWithDataFromDatabase(Post, 'reminderDate', responseGenerator)],
     false
 )
 
