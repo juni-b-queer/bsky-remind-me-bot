@@ -110,7 +110,6 @@ let interval  = 500
 let MAX_TIME_BETWEEN = 100;
 setInterval(async function () {
     // console.log("Checking for posts to remind");
-    debugLog('SCHEDULE', "Checking for posts to remind" )
     if(remindBotAgentDetails.agent){
         // Check for posts that require reminding
         let postsToRemind = await Post.findAll({
