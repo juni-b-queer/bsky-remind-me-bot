@@ -64,7 +64,7 @@ describe("flattenTextUpdated Handles keys", () => {
 
 
 describe("Trim Command From Input", () => {
-    let command = "testcommand";
+    let command = "TestCommand";
     let arbitraryText = 'hello world this is june'
     test("!{command} in front removes and trims", () => {
         let input = `!${command} ${arbitraryText}`
@@ -77,7 +77,7 @@ describe("Trim Command From Input", () => {
 
     test("!{command} with additional command", () => {
         let input = `!${command} ${arbitraryText} !${command}`
-        expect(trimCommandInput(input, command)).toBe(`${arbitraryText} !${command}`);
+        expect(trimCommandInput(input, command)).toBe(`${arbitraryText} !${command.toLowerCase()}`);
     });
     test("{command}! with time string", () => {
         let input = `${command}! 1 hour, 30 minutes`
