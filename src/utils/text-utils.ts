@@ -129,9 +129,9 @@ export function convertWordsToNumbers(numberString: string): string {
 
 export function trimCommandInput(input: string, command: string): string|boolean{
     if(input.startsWith(`!${command}`)){
-        return input.replace(`!${command}`, "").trim()
+        return input.replace(`!${command}`, "").trim().toLowerCase()
     }else if(input.startsWith(`${command}!`)){
-        return input.replace(`${command}!`, "").trim()
+        return input.replace(`${command}!`, "").trim().toLowerCase()
     }else{
         return false;
     }

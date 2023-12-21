@@ -146,12 +146,12 @@ setInterval(async function () {
     debugLog('SCHEDULE', `Time since last received message: ${diff}`)
     // console.log(`Time since last received message: ${diff}`)
     if (diff > MAX_TIME_BETWEEN) {
-        debugLog('SCHEDULE', 'Restarting subscription')
+        debugLog('SUBSCRIPTION', 'Restarting subscription')
         // console.log('Restarting subscription')
         firehoseClient.removeAllListeners();
         firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
         setFirehoseListener(firehoseClient)
-        debugLog('SCHEDULE', 'Subscription Restarted')
+        debugLog('SUBSCRIPTION', 'Subscription Restarted')
         // console.log('Subscription Restarted')
     }
 

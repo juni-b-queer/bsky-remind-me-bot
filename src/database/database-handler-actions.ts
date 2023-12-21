@@ -23,11 +23,6 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
         try{
             let postText: string = postDetails.value.text
             timeString = trimCommandInput(postText, this.commandKey);
-            // if(postText.startsWith("!RemindMe")){
-            //     timeString = postText.replace("!RemindMe ", "")
-            // }else{
-            //     timeString = postText.replace("RemindMe! ", "")
-            // }
             if(typeof timeString == "boolean"){
                 debugLog("INSERT", "Trim command returned false", true)
                 return;
