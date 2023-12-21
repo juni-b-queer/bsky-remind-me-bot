@@ -64,7 +64,7 @@ describe("flattenTextUpdated Handles keys", () => {
 
 
 describe("Trim Command From Input", () => {
-    let command = "TestCommand";
+    let command = "testcommand";
     let arbitraryText = 'hello world this is june'
     test("!{command} in front removes and trims", () => {
         let input = `!${command} ${arbitraryText}`
