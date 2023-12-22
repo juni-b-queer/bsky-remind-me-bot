@@ -1,4 +1,4 @@
-import {AppBskyFeedPost, AtpSessionData, AtpSessionEvent, BskyAgent} from "@atproto/api";
+import {AppBskyFeedPost} from "@atproto/api";
 import {
     ComAtprotoSyncSubscribeRepos,
     subscribeRepos,
@@ -6,14 +6,19 @@ import {
     XrpcEventStreamClient,
 } from 'atproto-firehose'
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {HandlerController} from "./handlers/abstract-handler.ts";
 import {Model, Op} from "sequelize";
 import {Post, sequelize} from "./database/database-connection.ts";
-import {RemindMeHandler} from "./handlers/remind-me/remind-me-handler.ts";
-import {AgentDetails, PostDetails} from "./utils/types.ts";
-import {replyToPost} from "./utils/agent-post-functions.ts";
-import {authenticateAgent, createAgent} from "./utils/agent-utils.ts";
-import {debugLog} from "./utils/logging-utils.ts";
+import {RemindMeHandler} from "./handlers/RemindMeHandler.ts";
+import {
+    HandlerController,
+    AgentDetails,
+    PostDetails,
+    replyToPost,
+    authenticateAgent,
+    createAgent,
+    debugLog
+} from "bsky-event-handlers";
+import {TestHandler} from "./handlers/TestHandler.ts";
 
 let remindBotAgentDetails: AgentDetails = {
     name: "remind-bot",
@@ -58,7 +63,8 @@ async function initialize() {
         throw new Error(`Could not get agent from ${remindBotAgentDetails.name}`)
     } else {
         remindBotHandlerController = new HandlerController(remindBotAgentDetails.agent, [
-            RemindMeHandler
+            RemindMeHandler,
+            // TestHandler
         ])
     }
     debugLog("INIT", 'Initialized!')
