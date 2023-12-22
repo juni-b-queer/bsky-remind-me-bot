@@ -83,7 +83,7 @@ new OrValidator([
 ### triggerAction
 The trigger action function is what should happen if the validators return true, and the action is triggered.
 
-This function can be anything, but is required to accept parameters; `agent: BskyAgent, op: RepoOp, postDetails: PostDetails`. It's easiest to include the trigger function in whatever file you create your handler (see `./src/handlers/test-handler/test-handler.ts`)
+This function can be anything, but is required to accept parameters; `agent: BskyAgent, op: RepoOp, postDetails: PostDetails`. It's easiest to include the trigger function in whatever file you create your handler (see `./src/handlers/test-handler/TestHandler.ts`)
 
 For most actions, you'll likely be replying to the given post that triggered the action, because of this, there is an easy to use `replyToPost` utility function.
 ```typescript

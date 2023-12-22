@@ -1,42 +1,5 @@
 import { add, addDays, addWeeks, addMonths } from "date-fns";
 
-export function flattenTextUpdated(triggerKey: string, input: string) {
-    if (!containsNumbers(triggerKey)) {
-        input = removeNumbers(input)
-    }
-    if (!containsPunctuation(triggerKey)) {
-        input = removePunctuation(input)
-    }
-    if (!containsSpaces(triggerKey)) {
-        input = removeSpaces(input)
-    }
-    return input.toLowerCase();
-}
-
-export function removePunctuation(input: string) {
-    return input.replace(/[.,\/#!$?%\^&\*;:{}=\-_`~()]/g, "").replace(/\s{2,}/g, " ")
-}
-
-export function removeNumbers(input: string) {
-    return input.replace(/[0-9]/g, "");
-}
-
-export function removeSpaces(input: string) {
-    return input.replace(" ", "");
-}
-
-export function containsNumbers(str) {
-    return /\d/.test(str);
-}
-
-export function containsPunctuation(str) {
-    return /\p{P}/gu.test(str);
-}
-
-export function containsSpaces(str) {
-    return str.includes(" ");
-}
-
 export function convertTextToDate(timeString: string, currentTime: Date = new Date()) {
     let units = ["second", "minute", "hour", "day", "week", "month", "quarter", "year"];
     let parts = timeString.split(/[\s,]+and\s|,/).map(item => item.trim());
@@ -125,14 +88,4 @@ export function convertWordsToNumbers(numberString: string): string {
 
     result += current;
     return result.toString();
-}
-
-export function trimCommandInput(input: string, command: string): string|boolean{
-    if(input.startsWith(`!${command}`)){
-        return input.replace(`!${command}`, "").trim().toLowerCase()
-    }else if(input.startsWith(`${command}!`)){
-        return input.replace(`${command}!`, "").trim().toLowerCase()
-    }else{
-        return false;
-    }
 }
