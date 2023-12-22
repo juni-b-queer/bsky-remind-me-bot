@@ -1,6 +1,5 @@
-import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails, ValidatorInput} from "../utils/types.ts";
+import {ValidatorInput} from "../utils/types.ts";
 
 export abstract class AbstractValidator {
 

@@ -3,7 +3,6 @@ import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeR
 import {PostDetails} from "../utils/types.ts";
 import {replyToPost} from "../utils/agent-post-functions.ts";
 import {AbstractTriggerAction} from "./abstract-trigger-action.ts";
-import {BEE_MOVIE_SKEETS} from "../handlers/bee-movie/bee-movie-skeets.ts";
 
 export class ReplyWithInputAction extends AbstractTriggerAction {
     constructor(private replyText) {
