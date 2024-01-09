@@ -1,6 +1,15 @@
 import {BskyAgent} from "@atproto/api";
 import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {PostDetails, AbstractTriggerAction, ReplyWithInputAction, replyToPost, getPosterDID, trimCommandInput, debugLog} from "bsky-event-handlers";
+import {
+    PostDetails,
+    AbstractTriggerAction,
+    ReplyWithInputAction,
+    replyToPost,
+    getPosterDID,
+    trimCommandInput,
+    debugLog,
+    AgentDetails
+} from "bsky-event-handlers";
 import {convertTextToDate} from "../utils/text-utils.ts";
 import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
@@ -10,7 +19,7 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
         super();
     }
 
-    async handle(agent: BskyAgent, op: RepoOp, postDetails: PostDetails): Promise<any> {
+    async handle(agentDetails: AgentDetails, op: RepoOp, postDetails: PostDetails): Promise<any> {
         // Get timing from post
         let timeString: string|boolean;
         let reminderDate: string;
@@ -28,7 +37,7 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
             // console.log("ERROR - Exception")
             console.log(postDetails)
             let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
-            await replyAction.handle(agent, op, postDetails);
+            await replyAction.handle(agentDetails.agent, op, postDetails);
             return;
         }
 
@@ -38,7 +47,7 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
             debugLog("INSERT", "empty reminder date", true)
             console.log(postDetails)
             let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
-            await replyAction.handle(agent, op, postDetails);
+            await replyAction.handle(agentDetails.agent, op, postDetails);
             return;
         }
 
@@ -61,7 +70,7 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
         super();
     }
 
-    async handle(agent: BskyAgent, op: RepoOp, postDetails: PostDetails): Promise<any> {
+    async handle(agentDetails: AgentDetails, op: RepoOp, postDetails: PostDetails): Promise<any> {
         let post = await Post.findOne({
             where: {
                 cid: {
@@ -76,7 +85,7 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
 
         let columnValue = post[this.column];
         let responseText = this.formattingAction(columnValue)
-        await replyToPost(agent, postDetails, responseText)
+        await replyToPost(agentDetails.agent, postDetails, responseText)
         debugLog("REPLY", `Responded with: ${responseText}`);
         return;
     }

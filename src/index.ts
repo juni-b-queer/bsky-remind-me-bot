@@ -19,6 +19,8 @@ import {
     debugLog
 } from "bsky-event-handlers";
 import {TestHandler} from "./handlers/TestHandler.ts";
+import {GoodBotHandler} from "./handlers/GoodBotHandler.ts";
+import {BadBotHandler} from "./handlers/BadBotHandler.ts";
 
 let remindBotAgentDetails: AgentDetails = {
     name: "remind-bot",
@@ -62,8 +64,10 @@ async function initialize() {
     if (!remindBotAgentDetails.agent) {
         throw new Error(`Could not get agent from ${remindBotAgentDetails.name}`)
     } else {
-        remindBotHandlerController = new HandlerController(remindBotAgentDetails.agent, [
+        remindBotHandlerController = new HandlerController(remindBotAgentDetails, [
             RemindMeHandler,
+            GoodBotHandler,
+            BadBotHandler
             // TestHandler
         ])
     }
@@ -109,43 +113,48 @@ function setFirehoseListener(firehoseClient: XrpcEventStreamClient) {
 }
 
 
-let interval = 500
+let interval = 100
 let MAX_TIME_BETWEEN = 100;
+let countSinceReminders = 0;
 setInterval(async function () {
     // console.log("Checking for posts to remind");
-    if (remindBotAgentDetails.agent) {
-        // Check for posts that require reminding
-        let postsToRemind = await Post.findAll({
-            where: {
-                [Op.and]: [
-                    {
-                        repliedAt: {
-                            [Op.is]: null
+    countSinceReminders++;
+    if(countSinceReminders == 5){
+        if (remindBotAgentDetails.agent) {
+            // Check for posts that require reminding
+            let postsToRemind = await Post.findAll({
+                where: {
+                    [Op.and]: [
+                        {
+                            repliedAt: {
+                                [Op.is]: null
+                            },
                         },
-                    },
-                    {
-                        reminderDate: {
-                            [Op.lte]: new Date()
+                        {
+                            reminderDate: {
+                                [Op.lte]: new Date()
+                            }
                         }
-                    }
-                ],
+                    ],
+                }
+            });
+            debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`)
+            // console.log(`Found ${postsToRemind.length} posts to remind`)
+            for (let post: Post of postsToRemind) {
+                try {
+                    debugLog('REMIND', `Reminding post cid: ${post.cid}`)
+                    // console.log(`Reminding post cid: ${post.cid}`)
+                    await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+                } catch (e) {
+                    debugLog('REMIND', `Failed to remind post`, true)
+                }
+                post.repliedAt = new Date()
+                post.save()
             }
-        });
-        debugLog('SCHEDULE', `Found ${postsToRemind.length} posts to remind`)
-        // console.log(`Found ${postsToRemind.length} posts to remind`)
-        for (let post: Post of postsToRemind) {
-            try {
-                debugLog('SCHEDULE', `Reminding post cid: ${post.cid}`)
-                // console.log(`Reminding post cid: ${post.cid}`)
-                await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
-            } catch (e) {
-                debugLog('SCHEDULE', `Failed to remind post`, true)
-                console.log(`ERROR - Failed to remind post`)
-            }
-            post.repliedAt = new Date()
-            post.save()
         }
+        countSinceReminders = 0;
     }
+
 
     let currentTime = Date.now();
     let diff = currentTime - lastMessage;

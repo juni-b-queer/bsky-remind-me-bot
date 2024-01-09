@@ -1,4 +1,5 @@
-import { add, addDays, addWeeks, addMonths } from "date-fns";
+import {add, addDays, addWeeks, addMonths} from "date-fns";
+import {AbstractValidator, removePunctuation, ValidatorInput} from "bsky-event-handlers";
 
 export function convertTextToDate(timeString: string, currentTime: Date = new Date()) {
     let units = ["second", "minute", "hour", "day", "week", "month", "quarter", "year"];
@@ -22,15 +23,15 @@ export function convertTextToDate(timeString: string, currentTime: Date = new Da
                 return;
             }
 
-            if(isNaN(Number(value))) {
+            if (isNaN(Number(value))) {
                 value = convertWordsToNumbers(value)  // Using words-to-numbers function to convert words to numbers
             }
 
-            if (units.includes(timeUnit)){
+            if (units.includes(timeUnit)) {
                 timeUnit += "s"; // Add 's' to make it plural as required by date-fns add function
             }
 
-            let options = { [timeUnit]: Number(value) };
+            let options = {[timeUnit]: Number(value)};
 
             // Calculate new date
             date = add(date, options);
@@ -89,3 +90,31 @@ export function convertWordsToNumbers(numberString: string): string {
     result += current;
     return result.toString();
 }
+
+export function isGoodBotResponse(input: string): boolean {
+    const positiveConnotationWords: string[] = ["great", "good", "fantastic", "excellent", "awesome", "positive", "amazing", "incredible", "super"];
+    const words = removePunctuation(input.toLowerCase()).split(" ");
+
+    if (words[1] === "bot") {
+        if (positiveConnotationWords.includes(words[0])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+export function isBadBotResponse(input: string): boolean {
+    const negativeConnotationWords: string[] = ["bad", "dumb", "stupid", "useless", "annoying", "shitty"];
+    const words = removePunctuation(input.toLowerCase()).split(" ");
+
+    if (words[1] === "bot") {
+        if (negativeConnotationWords.includes(words[0])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
