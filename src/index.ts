@@ -119,6 +119,9 @@ let countSinceReminders = 0;
 setInterval(async function () {
     // console.log("Checking for posts to remind");
     countSinceReminders++;
+    if(countSinceReminders>=6){
+        countSinceReminders = 0;
+    }
     if(countSinceReminders == 5){
         if (remindBotAgentDetails.agent) {
             // Check for posts that require reminding
