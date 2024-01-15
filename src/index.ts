@@ -1,12 +1,4 @@
-import {AppBskyFeedPost} from "@atproto/api";
-import {
-    ComAtprotoSyncSubscribeRepos,
-    subscribeRepos,
-    SubscribeReposMessage,
-    XrpcEventStreamClient,
-} from 'atproto-firehose'
-import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
-import {Model, Op} from "sequelize";
+import {Op} from "sequelize";
 import {Post, sequelize} from "./database/database-connection.ts";
 import {RemindMeHandler} from "./handlers/RemindMeHandler.ts";
 import {
@@ -16,7 +8,7 @@ import {
     replyToPost,
     authenticateAgent,
     createAgent,
-    debugLog
+    debugLog, FirehoseSubscription
 } from "bsky-event-handlers";
 import {TestHandler} from "./handlers/TestHandler.ts";
 import {GoodBotHandler} from "./handlers/GoodBotHandler.ts";
@@ -30,20 +22,23 @@ let remindBotAgentDetails: AgentDetails = {
     sessionData: undefined,
     agent: undefined
 }
-
-let remindBotHandlerController: HandlerController;
-let lastMessage = Date.now()
-
 /**
- * Agent for reminders
+ * Create the agent in the agent details
  */
 remindBotAgentDetails = createAgent(remindBotAgentDetails)
+
+/**
+ * HandlerController for the Remind Bot.
+ * This class is responsible for handling incoming requests and coordinating the different handlers for Remind Bot functionalities.
+ *
+ * @class
+ */
+let remindBotHandlerController: HandlerController;
 
 async function authorizeDatabase() {
     try {
         await sequelize.authenticate();
         debugLog("INIT", 'Connection to Database has been established successfully.')
-        // console.log('Connection to Database has been established successfully.');
         await Post.sync({alter: true})
         return true;
     } catch (error) {
@@ -59,18 +54,15 @@ async function authorizeDatabase() {
 async function initialize() {
     await authorizeDatabase();
 
-    // Here is where we're initializing the handler functions
     remindBotAgentDetails = await authenticateAgent(remindBotAgentDetails)
-    if (!remindBotAgentDetails.agent) {
-        throw new Error(`Could not get agent from ${remindBotAgentDetails.name}`)
-    } else {
-        remindBotHandlerController = new HandlerController(remindBotAgentDetails, [
-            RemindMeHandler,
-            GoodBotHandler,
-            BadBotHandler
-            // TestHandler
-        ])
-    }
+
+    remindBotHandlerController = new HandlerController(remindBotAgentDetails, [
+        RemindMeHandler,
+        GoodBotHandler,
+        BadBotHandler
+        // TestHandler
+    ], true)
+
     debugLog("INIT", 'Initialized!')
 }
 
@@ -86,94 +78,45 @@ try {
 /**
  * The client and listener for the firehose
  */
-let firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
-
-setFirehoseListener(firehoseClient)
-
-function setFirehoseListener(firehoseClient: XrpcEventStreamClient) {
-    firehoseClient.on('message', (m: SubscribeReposMessage) => {
-        if (ComAtprotoSyncSubscribeRepos.isCommit(m)) {
-            m.ops.forEach((op: RepoOp) => {
-                // console.log(op)
-                let payload = op.payload;
-                lastMessage = Date.now()
-                // @ts-ignore
-                switch (payload?.$type) {
-                    case 'app.bsky.feed.post':
-                        if (AppBskyFeedPost.isRecord(payload)) {
-                            let repo = m.repo;
-                            if (payload.reply) {
-                                remindBotHandlerController.handle(op, repo)
-                            }
-                        }
-                }
-            })
-        }
-    })
-}
+const firehoseSubscription = new FirehoseSubscription(
+    [remindBotHandlerController],
+    150
+);
 
 
-let interval = 100
-let MAX_TIME_BETWEEN = 150;
-let MAX_TIME_BEFORE_RESTART = 2000;
-let countSinceReminders = 0;
+
+let interval = 500;
 setInterval(async function () {
-    // console.log("Checking for posts to remind");
-    countSinceReminders++;
-    if(countSinceReminders>=6){
-        countSinceReminders = 0;
-    }
-    if(countSinceReminders == 5){
-        if (remindBotAgentDetails.agent) {
-            // Check for posts that require reminding
-            let postsToRemind = await Post.findAll({
-                where: {
-                    [Op.and]: [
-                        {
-                            repliedAt: {
-                                [Op.is]: null
-                            },
+    if (remindBotAgentDetails.agent) {
+        // Check for posts that require reminding
+        let postsToRemind = await Post.findAll({
+            where: {
+                [Op.and]: [
+                    {
+                        repliedAt: {
+                            [Op.is]: null
                         },
-                        {
-                            reminderDate: {
-                                [Op.lte]: new Date()
-                            }
+                    },
+                    {
+                        reminderDate: {
+                            [Op.lte]: new Date()
                         }
-                    ],
-                }
-            });
-            debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`)
-            // console.log(`Found ${postsToRemind.length} posts to remind`)
-            for (let post: Post of postsToRemind) {
-                try {
-                    debugLog('REMIND', `Reminding post cid: ${post.cid}`)
-                    // console.log(`Reminding post cid: ${post.cid}`)
-                    await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
-                } catch (e) {
-                    debugLog('REMIND', `Failed to remind post`, true)
-                }
-                post.repliedAt = new Date()
-                post.save()
+                    }
+                ],
             }
+        });
+        debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`)
+        // console.log(`Found ${postsToRemind.length} posts to remind`)
+        for (let post: Post of postsToRemind) {
+            try {
+                debugLog('REMIND', `Reminding post cid: ${post.cid}`)
+                // console.log(`Reminding post cid: ${post.cid}`)
+                await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+            } catch (e) {
+                debugLog('REMIND', `Failed to remind post`, true)
+            }
+            post.repliedAt = new Date()
+            post.save()
         }
-        countSinceReminders = 0;
     }
-
-
-    let currentTime = Date.now();
-    let diff = currentTime - lastMessage;
-    debugLog('SCHEDULE', `Time since last received message: ${diff}`)
-    // console.log(`Time since last received message: ${diff}`)
-    if (diff > MAX_TIME_BETWEEN) {
-        if(diff > MAX_TIME_BEFORE_RESTART){
-            debugLog('ERROR', `Reached max time, restarting`, true)
-            process.exit(1);
-        }
-        debugLog('SUBSCRIPTION', 'Restarting subscription')
-        firehoseClient.removeAllListeners();
-        firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
-        setFirehoseListener(firehoseClient)
-        debugLog('SUBSCRIPTION', 'Subscription Restarted')
-    }
-
 }, 60 * interval)
