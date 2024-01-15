@@ -114,7 +114,8 @@ function setFirehoseListener(firehoseClient: XrpcEventStreamClient) {
 
 
 let interval = 100
-let MAX_TIME_BETWEEN = 100;
+let MAX_TIME_BETWEEN = 150;
+let MAX_TIME_BEFORE_RESTART = 2000;
 let countSinceReminders = 0;
 setInterval(async function () {
     // console.log("Checking for posts to remind");
@@ -164,13 +165,15 @@ setInterval(async function () {
     debugLog('SCHEDULE', `Time since last received message: ${diff}`)
     // console.log(`Time since last received message: ${diff}`)
     if (diff > MAX_TIME_BETWEEN) {
+        if(diff > MAX_TIME_BEFORE_RESTART){
+            debugLog('ERROR', `Reached max time, restarting`, true)
+            process.exit(1);
+        }
         debugLog('SUBSCRIPTION', 'Restarting subscription')
-        // console.log('Restarting subscription')
         firehoseClient.removeAllListeners();
         firehoseClient = subscribeRepos(`wss://bsky.network`, {decodeRepoOps: true})
         setFirehoseListener(firehoseClient)
         debugLog('SUBSCRIPTION', 'Subscription Restarted')
-        // console.log('Subscription Restarted')
     }
 
 }, 60 * interval)

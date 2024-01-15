@@ -1,5 +1,9 @@
 .PHONY: *
 
+
+up-test: db-up bun-run
+
+
 build:
 	docker compose build
 
@@ -14,3 +18,6 @@ down:
 
 logs:
 	docker compose logs -f
+
+bun-run:
+	bun run run
