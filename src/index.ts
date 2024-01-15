@@ -3,12 +3,13 @@ import {Post, sequelize} from "./database/database-connection.ts";
 import {RemindMeHandler} from "./handlers/RemindMeHandler.ts";
 import {
     HandlerController,
+    FirehoseSubscription,
     AgentDetails,
     PostDetails,
     replyToPost,
     authenticateAgent,
     createAgent,
-    debugLog, FirehoseSubscription
+    debugLog
 } from "bsky-event-handlers";
 import {TestHandler} from "./handlers/TestHandler.ts";
 import {GoodBotHandler} from "./handlers/GoodBotHandler.ts";
@@ -82,7 +83,6 @@ const firehoseSubscription = new FirehoseSubscription(
     [remindBotHandlerController],
     150
 );
-
 
 
 let interval = 500;
