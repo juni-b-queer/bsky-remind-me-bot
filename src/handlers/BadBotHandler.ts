@@ -1,5 +1,5 @@
 import {
-    AgentDetails, debugLog,
+    AgentDetails, debugLog, DebugLogAction,
     FunctionAction, PostDetails,
     PostHandler,
     ReplyingToBotValidator,
@@ -10,7 +10,7 @@ import {IsBadBotValidator} from "../validators/ReplyToBotValidators.ts";
 
 export let BadBotHandler = new PostHandler(
     [new IsBadBotValidator(), new ReplyingToBotValidator()],
-    [new ReplyWithInputAction("I'm sorry 😓"), new FunctionAction((a: AgentDetails, op: RepoOp, p: PostDetails) => { debugLog("BAD BOT", `Told I'm bad :(`) })],
+    [new ReplyWithInputAction("I'm sorry 😓"), new DebugLogAction("BAD BOT", `Told I'm bad :(`)],
     false
 )
 
