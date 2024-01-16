@@ -1,11 +1,9 @@
 import {
-    AgentDetails, debugLog, DebugLogAction,
-    FunctionAction, PostDetails,
+    DebugLogAction,
     PostHandler,
     ReplyingToBotValidator,
     ReplyWithInputAction
 } from "bsky-event-handlers";
-import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {IsGoodBotValidator} from "../validators/ReplyToBotValidators.ts";
 
 
