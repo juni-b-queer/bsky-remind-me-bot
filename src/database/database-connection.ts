@@ -35,6 +35,10 @@ export const Post = sequelize.define('Post', {
     repliedAt: {
         type: DataTypes.DATE,
         allowNull: true
+    },
+    timezone: {
+        type: DataTypes.STRING,
+        allowNull: false
     }
 }, {
     // Other model options go here
