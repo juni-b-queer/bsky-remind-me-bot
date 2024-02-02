@@ -13,6 +13,7 @@ import {
 import {convertTextToDate} from "../utils/text-utils.ts";
 import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
+import {extractTimeFromInput, extractTimezone, extractTimezoneAbbreviation} from "time-decoding-utils";
 export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
 
     constructor(private commandKey: string) {
@@ -31,12 +32,12 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
                 return;
             }
 
-            reminderDate = convertTextToDate(timeString)
+            reminderDate = extractTimeFromInput(timeString)
         }catch (e) {
             debugLog("INSERT", e, true)
             // console.log("ERROR - Exception")
             console.log(postDetails)
-            let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
+            let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
             await replyAction.handle(agentDetails.agent, op, postDetails);
             return;
         }
@@ -46,9 +47,17 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
             //reply with
             debugLog("INSERT", "empty reminder date", true)
             console.log(postDetails)
-            let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days, 1 hour, and 20 minutes\"")
+            let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
             await replyAction.handle(agentDetails.agent, op, postDetails);
             return;
+        }
+
+        let timezone: boolean | string = extractTimezoneAbbreviation(timeString)
+        if(typeof timezone === "boolean"){
+            timezone = extractTimezone(timeString)
+            if(typeof timezone === "boolean"){
+                timezone = ""
+            }
         }
 
         // Save post to database
@@ -58,7 +67,8 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
             uri: postDetails.uri,
             did: getPosterDID(postDetails),
             postDetails: postDetails,
-            reminderDate: reminderDate
+            reminderDate: reminderDate,
+            timezone: timezone
         })
         debugLog("INSERT", `Created Post with CID: ${postDetails.cid}`)
     }
@@ -66,7 +76,7 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
 
 export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
 
-    constructor(private dbType, private column: string, private formattingAction) {
+    constructor(private dbType, private formattingAction) {
         super();
     }
 
@@ -83,8 +93,7 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
             return;
         }
 
-        let columnValue = post[this.column];
-        let responseText = this.formattingAction(columnValue)
+        let responseText = this.formattingAction(post)
         await replyToPost(agentDetails.agent, postDetails, responseText)
         debugLog("REPLY", `Responded with: ${responseText}`);
         return;
