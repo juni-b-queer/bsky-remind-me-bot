@@ -21,3 +21,10 @@ logs:
 
 bun-run:
 	bun run run
+
+backup-db:
+	./bin/backup-db.sh
+
+import-db:
+	./bin/import-db.sh `ls ./backups/*_bunreplybot.sql | tail -1`
+
