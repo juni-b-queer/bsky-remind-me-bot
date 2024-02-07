@@ -39,11 +39,11 @@ let remindBotHandlerController: HandlerController;
 async function authorizeDatabase() {
     try {
         await sequelize.authenticate();
-        debugLog("INIT", 'Connection to Database has been established successfully.')
+        debugLog("INIT", 'Connection to Database has been established successfully.', 'warn')
         await Post.sync({alter: true})
         return true;
     } catch (error) {
-        debugLog("INIT", 'Connection to Database FAILED.', true)
+        debugLog("INIT", 'Connection to Database FAILED.', 'error')
         console.error('Unable to connect to the database:', error);
         await setTimeout(async () => {
             await authorizeDatabase()
@@ -64,7 +64,7 @@ async function initialize() {
         // TestHandler
     ], true)
 
-    debugLog("INIT", 'Initialized!')
+    debugLog("INIT", 'Initialized!', 'warn')
 }
 
 try {
@@ -105,15 +105,19 @@ setInterval(async function () {
                 ],
             }
         });
-        debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`)
+        if(postsToRemind.length > 0){
+            debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`, 'warn')
+        }else{
+            debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`, 'info')
+        }
         // console.log(`Found ${postsToRemind.length} posts to remind`)
         for (let post: Post of postsToRemind) {
             try {
-                debugLog('REMIND', `Reminding post cid: ${post.cid}`)
+                debugLog('REMIND', `Reminding post cid: ${post.cid}`, 'warn')
                 // console.log(`Reminding post cid: ${post.cid}`)
                 await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
             } catch (e) {
-                debugLog('REMIND', `Failed to remind post`, true)
+                debugLog('REMIND', `Failed to remind post`, 'error')
             }
             post.repliedAt = new Date()
             post.save()

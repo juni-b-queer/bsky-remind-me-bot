@@ -28,13 +28,13 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
             let postText: string = postDetails.value.text
             timeString = trimCommandInput(postText, this.commandKey);
             if(typeof timeString == "boolean"){
-                debugLog("INSERT", "Trim command returned false", true)
+                debugLog("INSERT", "Trim command returned false", 'error')
                 return;
             }
 
             reminderDate = extractTimeFromInput(timeString)
         }catch (e) {
-            debugLog("INSERT", e, true)
+            debugLog("INSERT", e, 'error')
             // console.log("ERROR - Exception")
             console.log(postDetails)
             let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
@@ -45,7 +45,7 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
 
         if(reminderDate === ""){
             //reply with
-            debugLog("INSERT", "empty reminder date", true)
+            debugLog("INSERT", "empty reminder date", 'error')
             console.log(postDetails)
             let replyAction = new ReplyWithInputAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
             await replyAction.handle(agentDetails.agent, op, postDetails);
@@ -70,7 +70,7 @@ export class InsertPostReminderInToDatabase extends AbstractTriggerAction{
             reminderDate: reminderDate,
             timezone: timezone
         })
-        debugLog("INSERT", `Created Post with CID: ${postDetails.cid}`)
+        debugLog("INSERT", `Created Post with CID: ${postDetails.cid}`, 'warn')
     }
 }
 
@@ -89,13 +89,13 @@ export class ReplyWithDataFromDatabase extends AbstractTriggerAction{
             }
         });
         if(!post){
-            debugLog("REPLY", "Post not found in database", true)
+            debugLog("REPLY", "Post not found in database", 'error')
             return;
         }
 
         let responseText = this.formattingAction(post)
         await replyToPost(agentDetails.agent, postDetails, responseText)
-        debugLog("REPLY", `Responded with: ${responseText}`);
+        debugLog("REPLY", `Responded with: ${responseText}`, 'warn');
         return;
     }
 }
