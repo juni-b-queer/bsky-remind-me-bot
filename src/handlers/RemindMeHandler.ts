@@ -1,15 +1,35 @@
-import {InputIsCommandValidator, PostHandler, getHumanReadableDateTimeStamp} from "bsky-event-handlers";
+import {
+    InputIsCommandValidator,
+    getHumanReadableDateTimeStamp,
+    CreateSkeetHandler,
+    HandlerAgent,
+    CreateSkeetMessage
+} from "bsky-event-handlers";
 import {InsertPostReminderInToDatabase, ReplyWithDataFromDatabase} from "../database/database-handler-actions.ts";
-import {Post} from "../database/database-connection.ts";
+import {Post, PostAttributes} from "../database/database-connection.ts";
 
 const COMMAND = <string>Bun.env.REMIND_ME_COMMAND ?? "RemindMe"
-export let RemindMeHandler = new PostHandler(
-    [new InputIsCommandValidator(COMMAND, false)],
-    [new InsertPostReminderInToDatabase(COMMAND), new ReplyWithDataFromDatabase(Post, responseGenerator)],
-    false
-)
 
-export function responseGenerator(post) {
+export class RemindMeHandler extends CreateSkeetHandler{
+    constructor(
+        public handlerAgent: HandlerAgent,
+    ) {
+        super(
+            [new InputIsCommandValidator(COMMAND, false)],
+            [
+                new InsertPostReminderInToDatabase(COMMAND),
+                new ReplyWithDataFromDatabase(responseGenerator)
+            ],
+            handlerAgent,
+        );
+    }
+
+    async handle(message: CreateSkeetMessage): Promise<void> {
+        return super.handle(message);
+    }
+}
+// @ts-ignore
+export function responseGenerator(post: PostAttributes) {
     let humanReadable: string;
     let output: string;
     try{
