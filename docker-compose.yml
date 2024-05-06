@@ -18,11 +18,26 @@ services:
     networks:
       - bun
 
+  jetstream:
+    image: "ghcr.io/juni-b-queer/jetstream:main"
+    container_name: jetstream
+    environment:
+      - CURSOR_FILE=/data/cursor.json
+    ports:
+      - "6008:6008"
+    volumes:
+      - ./data:/data
+    networks:
+      - bun
+
   remindbot:
     build: .
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       - mysql
+      - jetstream
     networks:
       - bun
 

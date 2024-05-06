@@ -1,49 +1,45 @@
 import {Op} from "sequelize";
-import {Post, sequelize} from "./database/database-connection.ts";
+import {Post, PostAttributes, sequelize} from "./database/database-connection.ts";
 import {RemindMeHandler} from "./handlers/RemindMeHandler.ts";
 import {
-    HandlerController,
-    FirehoseSubscription,
-    AgentDetails,
-    PostDetails,
-    replyToPost,
-    authenticateAgent,
-    createAgent,
-    debugLog
+    BadBotHandler,
+    DebugLog,
+    debugLog,
+    GoodBotHandler,
+    HandlerAgent,
+    JetstreamSubscription,
+    Reply
 } from "bsky-event-handlers";
-import {TestHandler} from "./handlers/TestHandler.ts";
-import {GoodBotHandler} from "./handlers/GoodBotHandler.ts";
-import {BadBotHandler} from "./handlers/BadBotHandler.ts";
+import {PostDetails, replyToPost} from "./utils/legacy-utils.ts"
 
-let remindBotAgentDetails: AgentDetails = {
-    name: "remind-bot",
-    did: undefined,
-    handle: <string>Bun.env.REMIND_BOT_BSKY_HANDLE,
-    password: <string>Bun.env.REMIND_BOT_BSKY_PASSWORD,
-    sessionData: undefined,
-    agent: undefined
+
+const remindBotHandlerAgent = new HandlerAgent(
+    "remind-bot",
+    <string>Bun.env.REMIND_BOT_BSKY_HANDLE,
+    <string>Bun.env.REMIND_BOT_BSKY_PASSWORD,
+);
+
+let jetstreamSubscription: JetstreamSubscription;
+
+
+let handlers = {
+    post: {
+        c: [
+            new RemindMeHandler(remindBotHandlerAgent),
+            new GoodBotHandler(remindBotHandlerAgent),
+            new BadBotHandler(remindBotHandlerAgent)
+        ]
+    },
 }
-/**
- * Create the agent in the agent details
- */
-remindBotAgentDetails = createAgent(remindBotAgentDetails)
-
-/**
- * HandlerController for the Remind Bot.
- * This class is responsible for handling incoming requests and coordinating the different handlers for Remind Bot functionalities.
- *
- * @class
- */
-let remindBotHandlerController: HandlerController;
 
 async function authorizeDatabase() {
     try {
         await sequelize.authenticate();
-        debugLog("INIT", 'Connection to Database has been established successfully.', 'warn')
+        DebugLog.warn("INIT", 'Connection to Database has been established successfully.')
         await Post.sync({alter: true})
         return true;
     } catch (error) {
-        debugLog("INIT", 'Connection to Database FAILED.', 'error')
+        DebugLog.error("INIT", 'Connection to Database FAILED.')
         console.error('Unable to connect to the database:', error);
         await setTimeout(async () => {
             await authorizeDatabase()
@@ -55,39 +51,24 @@ async function authorizeDatabase() {
 async function initialize() {
     await authorizeDatabase();
 
-    remindBotAgentDetails = await authenticateAgent(remindBotAgentDetails)
+    await remindBotHandlerAgent.authenticate()
 
-    remindBotHandlerController = new HandlerController(remindBotAgentDetails, [
-        RemindMeHandler,
-        GoodBotHandler,
-        BadBotHandler
-        // TestHandler
-    ], true)
+    DebugLog.info("INIT", 'Initialized!')
 
-    debugLog("INIT", 'Initialized!', 'warn')
+    jetstreamSubscription = new JetstreamSubscription(
+        handlers,
+        <string>Bun.env.JETSTREAM_URL
+    );
 }
 
-try {
-    await initialize();
-} catch (e) {
-    setTimeout(async function () {
-        await initialize()
-    }, 30000)
-}
-
-
-/**
- * The client and listener for the firehose
- */
-const firehoseSubscription = new FirehoseSubscription(
-    [remindBotHandlerController],
-    150
-);
+initialize().then(() => {
+    jetstreamSubscription.createSubscription()
+});
 
 
 let interval = 500;
 setInterval(async function () {
-    if (remindBotAgentDetails.agent) {
+    if (remindBotHandlerAgent.getAgent) {
         // Check for posts that require reminding
         let postsToRemind = await Post.findAll({
             where: {
@@ -105,22 +86,37 @@ setInterval(async function () {
                 ],
             }
         });
-        if(postsToRemind.length > 0){
+        if (postsToRemind.length > 0) {
             debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`, 'warn')
-        }else{
+        } else {
             debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`, 'info')
         }
         // console.log(`Found ${postsToRemind.length} posts to remind`)
-        for (let post: Post of postsToRemind) {
+        // @ts-ignore
+        for (let postModel: PostAttributes of postsToRemind) {
+            let post: PostAttributes = <PostAttributes><unknown>postModel;
             try {
-                debugLog('REMIND', `Reminding post cid: ${post.cid}`, 'warn')
+                // @ts-ignore
+                DebugLog.warn('REMIND', `Reminding post cid: ${post.cid}`)
                 // console.log(`Reminding post cid: ${post.cid}`)
-                await replyToPost(remindBotAgentDetails.agent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+                if (post.reply !== null) {
+                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <Reply>post.reply)
+
+                } else {
+                    if (post.postDetails !== null) {
+                        // @ts-ignore
+                        await replyToPost(remindBotHandlerAgent.getAgent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+                    } else {
+                        DebugLog.error("REMIND", "No reply or Post Details")
+                    }
+                }
+
             } catch (e) {
-                debugLog('REMIND', `Failed to remind post`, 'error')
+                DebugLog.error('REMIND', `Failed to remind post`)
             }
-            post.repliedAt = new Date()
-            post.save()
+            // @ts-ignore
+            postModel.repliedAt = new Date()
+            postModel.save()
         }
     }
 }, 60 * interval)
