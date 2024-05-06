@@ -1,15 +1,16 @@
-import {BskyAgent} from "@atproto/api";
-import {RepoOp} from "@atproto/api/dist/client/types/com/atproto/sync/subscribeRepos";
 import {
-
-    trimCommandInput,
-    debugLog, AbstractMessageAction, CreateSkeetMessage, HandlerAgent, DebugLog, ReplyToSkeetAction
+    AbstractMessageAction,
+    CreateSkeetMessage,
+    DebugLog,
+    HandlerAgent,
+    ReplyToSkeetAction,
+    trimCommandInput
 } from "bsky-event-handlers";
-import {convertTextToDate} from "../utils/text-utils.ts";
 import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
 import {extractTimeFromInput, extractTimezone, extractTimezoneAbbreviation} from "time-decoding-utils";
-export class InsertPostReminderInToDatabase extends AbstractMessageAction{
+
+export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
     constructor(private commandKey: string) {
         super();
@@ -17,18 +18,18 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction{
 
     async handle(message: CreateSkeetMessage, handlerAgent: HandlerAgent): Promise<any> {
         // Get timing from post
-        let timeString: string|boolean;
+        let timeString: string | boolean;
         let reminderDate: string;
-        try{
+        try {
             let postText: string = message.record.text ?? "";
             timeString = trimCommandInput(postText, this.commandKey);
-            if(typeof timeString == "boolean"){
-                debugLog("INSERT", "Trim command returned false", 'error')
+            if (typeof timeString == "boolean") {
+                DebugLog.error("INSERT", "Trim command returned false")
                 return;
             }
 
             reminderDate = extractTimeFromInput(timeString)
-        }catch (e) {
+        } catch (e) {
             // @ts-ignore
             DebugLog.error("INSERT", e)
             // console.log("ERROR - Exception")
@@ -38,7 +39,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction{
         }
 
 
-        if(reminderDate === ""){
+        if (reminderDate === "") {
             //reply with
             DebugLog.error("INSERT", "empty reminder date")
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
@@ -47,9 +48,9 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction{
         }
 
         let timezone: boolean | string = extractTimezoneAbbreviation(timeString)
-        if(typeof timezone === "boolean"){
+        if (typeof timezone === "boolean") {
             timezone = extractTimezone(timeString)
-            if(typeof timezone === "boolean"){
+            if (typeof timezone === "boolean") {
                 timezone = ""
             }
         }
@@ -65,11 +66,11 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction{
             reminderDate: reminderDate,
             timezone: timezone
         })
-        debugLog("INSERT", `Created Post with CID: ${message.cid}`, 'warn')
+        DebugLog.warn("INSERT", `Created Post with CID: ${message.cid}`)
     }
 }
 
-export class ReplyWithDataFromDatabase extends AbstractMessageAction{
+export class ReplyWithDataFromDatabase extends AbstractMessageAction {
 
     constructor(private formattingAction: (arg0: any) => string) {
         super();
@@ -83,8 +84,8 @@ export class ReplyWithDataFromDatabase extends AbstractMessageAction{
                 },
             }
         });
-        if(!post){
-            debugLog("REPLY", "Post not found in database", 'error')
+        if (!post) {
+            DebugLog.error("REPLY", "Post not found in database")
             return;
         }
 

@@ -19,7 +19,6 @@ export type PostAttributes = {
     reminderDate: string,
     repliedAt: string,
     timezone: string,
-
 }
 
 export const Post = sequelize.define('Post', {
