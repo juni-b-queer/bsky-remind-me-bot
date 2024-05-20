@@ -41,7 +41,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
         if (reminderDate === "") {
             //reply with
-            DebugLog.error("INSERT", "empty reminder date")
+            DebugLog.error("INSERT", `empty reminder date: ${message.record.text}`)
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
             await replyAction.handle(message, handlerAgent);
             return;
