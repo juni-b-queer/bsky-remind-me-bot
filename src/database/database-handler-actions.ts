@@ -24,14 +24,14 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             let postText: string = message.record.text ?? "";
             timeString = trimCommandInput(postText, this.commandKey);
             if (typeof timeString == "boolean") {
-                DebugLog.error("INSERT", "Trim command returned false")
+                DebugLog.error("INSERT", `Trim command returned false: ${message.record.text}`)
                 return;
             }
 
             reminderDate = extractTimeFromInput(timeString)
         } catch (e) {
             // @ts-ignore
-            DebugLog.error("INSERT", e)
+            DebugLog.error("INSERT", e + `: ${message.record.text}`)
             // console.log("ERROR - Exception")
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
             await replyAction.handle(message, handlerAgent);

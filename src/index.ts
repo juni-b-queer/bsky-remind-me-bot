@@ -87,9 +87,9 @@ setInterval(async function () {
             }
         });
         if (postsToRemind.length > 0) {
-            debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`, 'warn')
+            DebugLog.warn('REMIND', `Found ${postsToRemind.length} posts to remind`)
         } else {
-            debugLog('REMIND', `Found ${postsToRemind.length} posts to remind`, 'info')
+            DebugLog.log('REMIND', `Found ${postsToRemind.length} posts to remind`, 'debug')
         }
         // console.log(`Found ${postsToRemind.length} posts to remind`)
         // @ts-ignore
