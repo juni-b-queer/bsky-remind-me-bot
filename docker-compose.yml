@@ -38,6 +38,8 @@ services:
     depends_on:
       - mysql
       - jetstream
+    volumes:
+      - ./sessionData:/sessionData
     networks:
       - bun
 

@@ -26,8 +26,8 @@ let handlers = {
     post: {
         c: [
             new RemindMeHandler(remindBotHandlerAgent),
-            new GoodBotHandler(remindBotHandlerAgent),
-            new BadBotHandler(remindBotHandlerAgent)
+            GoodBotHandler.make(remindBotHandlerAgent),
+            BadBotHandler.make(remindBotHandlerAgent)
         ]
     },
 }

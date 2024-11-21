@@ -16,7 +16,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
         super();
     }
 
-    async handle(message: CreateSkeetMessage, handlerAgent: HandlerAgent): Promise<any> {
+    async handle(handlerAgent: HandlerAgent, message: CreateSkeetMessage ): Promise<any> {
         // Get timing from post
         let timeString: string | boolean;
         let reminderDate: string;
@@ -28,13 +28,15 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
                 return;
             }
 
-            reminderDate = extractTimeFromInput(timeString)
+            const postTime = new Date(message.record.createdAt);
+
+            reminderDate = extractTimeFromInput(timeString, undefined, postTime)
         } catch (e) {
             // @ts-ignore
             DebugLog.error("INSERT", e + `: ${message.record.text}`)
             // console.log("ERROR - Exception")
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
-            await replyAction.handle(message, handlerAgent);
+            await replyAction.handle(handlerAgent, message);
             return;
         }
 
@@ -43,7 +45,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             //reply with
             DebugLog.error("INSERT", `empty reminder date: ${message.record.text}`)
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
-            await replyAction.handle(message, handlerAgent);
+            await replyAction.handle(handlerAgent, message);
             return;
         }
 
@@ -76,7 +78,7 @@ export class ReplyWithDataFromDatabase extends AbstractMessageAction {
         super();
     }
 
-    async handle(message: CreateSkeetMessage, handlerAgent: HandlerAgent): Promise<any> {
+    async handle(handlerAgent: HandlerAgent, message: CreateSkeetMessage ): Promise<any> {
         let post = await Post.findOne({
             where: {
                 cid: {
