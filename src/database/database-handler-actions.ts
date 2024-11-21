@@ -8,7 +8,12 @@ import {
 } from "bsky-event-handlers";
 import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
-import {extractTimeFromInput, extractTimezone, extractTimezoneAbbreviation} from "time-decoding-utils";
+import {extractTimezone} from "time-decoding-utils";
+import moment from "moment-timezone";
+import * as chrono from "chrono-node";
+moment.tz.link(
+    require('../utils/tz.json').links
+)
 
 export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
@@ -20,6 +25,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
         // Get timing from post
         let timeString: string | boolean;
         let reminderDate: string;
+        let timezone: string | boolean;
         try {
             let postText: string = message.record.text ?? "";
             timeString = trimCommandInput(postText, this.commandKey);
@@ -28,7 +34,23 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
                 return;
             }
 
-            reminderDate = extractTimeFromInput(timeString)
+            timezone = extractTimezone(timeString)
+            if (typeof timezone === "boolean") {
+                timezone = "America/Chicago"
+            }
+
+            let timezoneAbbr = moment.tz(timezone).zoneAbbr()
+
+            let parsedDate = chrono.parseDate(timeString,
+                {
+                    timezone: timezoneAbbr,
+                });
+
+            if(parsedDate == null){
+                throw new Error("Parsed date invalid")
+            }
+
+            reminderDate = parsedDate.toISOString();
         } catch (e) {
             // @ts-ignore
             DebugLog.error("INSERT", e + `: ${message.record.text}`)
@@ -36,23 +58,6 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
             await replyAction.handle(message, handlerAgent);
             return;
-        }
-
-
-        if (reminderDate === "") {
-            //reply with
-            DebugLog.error("INSERT", `empty reminder date: ${message.record.text}`)
-            let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
-            await replyAction.handle(message, handlerAgent);
-            return;
-        }
-
-        let timezone: boolean | string = extractTimezoneAbbreviation(timeString)
-        if (typeof timezone === "boolean") {
-            timezone = extractTimezone(timeString)
-            if (typeof timezone === "boolean") {
-                timezone = ""
-            }
         }
 
         // Save post to database

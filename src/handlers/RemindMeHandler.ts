@@ -1,16 +1,14 @@
-import {
-    InputIsCommandValidator,
-    getHumanReadableDateTimeStamp,
-    CreateSkeetHandler,
-    HandlerAgent,
-    CreateSkeetMessage
-} from "bsky-event-handlers";
+import {CreateSkeetHandler, CreateSkeetMessage, HandlerAgent, InputIsCommandValidator} from "bsky-event-handlers";
 import {InsertPostReminderInToDatabase, ReplyWithDataFromDatabase} from "../database/database-handler-actions.ts";
-import {Post, PostAttributes} from "../database/database-connection.ts";
+import {PostAttributes} from "../database/database-connection.ts";
+import moment from "moment-timezone";
+moment.tz.link(
+    require('../utils/tz.json').links
+)
 
 const COMMAND = <string>Bun.env.REMIND_ME_COMMAND ?? "RemindMe"
 
-export class RemindMeHandler extends CreateSkeetHandler{
+export class RemindMeHandler extends CreateSkeetHandler {
     constructor(
         public handlerAgent: HandlerAgent,
     ) {
@@ -28,20 +26,14 @@ export class RemindMeHandler extends CreateSkeetHandler{
         return super.handle(message);
     }
 }
+
 // @ts-ignore
 export function responseGenerator(post: PostAttributes) {
-    let humanReadable: string;
-    let output: string;
-    try{
-        let tz = post['timezone'] !== "" ? post['timezone'] : "CST"
-        let suffixTimezone = tz;
-        if(suffixTimezone.length === 3){
-            suffixTimezone = suffixTimezone.slice(0, 1) + suffixTimezone.slice(2);
-        }
-        output = `Reminder set for ${getHumanReadableDateTimeStamp(post['reminderDate'], tz)} ${suffixTimezone}`
-    }catch (e){
-        humanReadable = getHumanReadableDateTimeStamp(post['reminderDate']);
-        output = `Reminder set for ${humanReadable} \n(Timezone not recognized, falling back to America/Chicago)`
-    }
-    return output
+    let tz = post['timezone'] !== "" ? post['timezone'] : moment.tz("America/Chicago").zoneAbbr()
+    return `Reminder set for ${generateHumanReadable(post['reminderDate'], tz)}`
+}
+
+export function generateHumanReadable(dateString: string | Date, timezone: string): string {
+    let momentDate = moment.tz(dateString, timezone);
+    return momentDate.format("MMM D, YYYY") + " at " + momentDate.format("HH:mmA") + ` ${timezone}`;
 }
