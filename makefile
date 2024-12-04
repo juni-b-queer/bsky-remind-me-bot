@@ -1,14 +1,16 @@
 .PHONY: *
 
 
-up-test: db-up bun-run
+up-test: test-up run
 
 
 build:
 	docker compose build
 
-db-up:
-	docker compose up -d mysql
+test-up:
+	docker compose up -d mysql jetstream
+
+
 
 up:
 	docker compose up -d
@@ -19,7 +21,7 @@ down:
 logs:
 	docker compose logs -f
 
-bun-run:
+run:
 	bun run run
 
 backup-db:

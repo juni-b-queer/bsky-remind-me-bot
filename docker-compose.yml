@@ -19,8 +19,9 @@ services:
       - bun
 
   jetstream:
-    image: "ghcr.io/juni-b-queer/jetstream:main"
+    image: "ghcr.io/juni-b-queer/jetstream-new:personal-branch"
     container_name: jetstream
+    restart: unless-stopped
     environment:
       - CURSOR_FILE=/data/cursor.json
     ports:

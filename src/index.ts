@@ -8,7 +8,7 @@ import {
     GoodBotHandler,
     HandlerAgent,
     JetstreamSubscription,
-    Reply
+    JetstreamReply
 } from "bsky-event-handlers";
 import {PostDetails, replyToPost} from "./utils/legacy-utils.ts"
 
@@ -100,7 +100,7 @@ setInterval(async function () {
                 DebugLog.warn('REMIND', `Reminding post cid: ${post.cid}`)
                 // console.log(`Reminding post cid: ${post.cid}`)
                 if (post.reply !== null) {
-                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <Reply>post.reply)
+                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>post.reply)
 
                 } else {
                     if (post.postDetails !== null) {

@@ -2,7 +2,7 @@ import {
     InputIsCommandValidator,
     getHumanReadableDateTimeStamp,
     HandlerAgent,
-    CreateSkeetMessage, MessageHandler, IsNewPost, CreateLikeAction
+    MessageHandler, IsNewPost, CreateLikeAction, JetstreamEventCommit
 } from "bsky-event-handlers";
 import {InsertPostReminderInToDatabase, ReplyWithDataFromDatabase} from "../database/database-handler-actions.ts";
 import {Post, PostAttributes} from "../database/database-connection.ts";
@@ -27,7 +27,7 @@ export class RemindMeHandler extends MessageHandler{
         );
     }
 
-    async handle(handlerAgent:HandlerAgent, message: CreateSkeetMessage): Promise<void> {
+    async handle(handlerAgent:HandlerAgent, message: JetstreamEventCommit): Promise<void> {
         return super.handle(handlerAgent, message);
     }
 }

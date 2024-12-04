@@ -4,6 +4,7 @@ data/
 # Logs
 build/*
 logs
+sessionData
 _.log
 npm-debug.log_
 yarn-debug.log*
