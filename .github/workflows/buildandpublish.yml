@@ -37,6 +37,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Set up python
+        uses: actions/setup-python@v5
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
