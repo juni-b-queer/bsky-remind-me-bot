@@ -4,13 +4,12 @@ import {RemindMeHandler} from "./handlers/RemindMeHandler.ts";
 import {
     BadBotHandler,
     DebugLog,
-    debugLog,
     GoodBotHandler,
     HandlerAgent,
     JetstreamSubscription,
     JetstreamReply
 } from "bsky-event-handlers";
-import {generateReplyFromPostDetails, PostDetails, replyToPost} from "./utils/legacy-utils.ts"
+import {generateReplyFromPostDetails, PostDetails} from "./utils/legacy-utils.ts"
 
 
 const remindBotHandlerAgent = new HandlerAgent(
