@@ -112,7 +112,7 @@ setInterval(async function () {
                 }
 
             } catch (e) {
-                DebugLog.error('REMIND', `Failed to remind post`)
+                DebugLog.error('REMIND', `Failed to remind post: ${e}`)
             }
             // @ts-ignore
             postModel.repliedAt = new Date()
