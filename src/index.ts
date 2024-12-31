@@ -10,7 +10,7 @@ import {
     JetstreamSubscription,
     JetstreamReply
 } from "bsky-event-handlers";
-import {PostDetails, replyToPost} from "./utils/legacy-utils.ts"
+import {generateReplyFromPostDetails, PostDetails, replyToPost} from "./utils/legacy-utils.ts"
 
 
 const remindBotHandlerAgent = new HandlerAgent(
@@ -104,8 +104,9 @@ setInterval(async function () {
 
                 } else {
                     if (post.postDetails !== null) {
-                        // @ts-ignore
-                        await replyToPost(remindBotHandlerAgent.getAgent, <PostDetails>post.postDetails, "⏰ This is your reminder! ⏰")
+                        DebugLog.info("REMIND", "With post details")
+                        let reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>post.postDetails)
+                        await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
                     } else {
                         DebugLog.error("REMIND", "No reply or Post Details")
                     }

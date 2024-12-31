@@ -1,6 +1,6 @@
 import {DataTypes, Sequelize} from "sequelize";
 import {PostDetails} from "../utils/legacy-utils.ts";
-import {Reply} from "bsky-event-handlers";
+import {JetstreamReply} from "bsky-event-handlers";
 
 export const sequelize = new Sequelize(<string>Bun.env.DB_DATABASE, <string>Bun.env.DB_USERNAME, <string>Bun.env.DB_PASSWORD, {
     host: <string>Bun.env.DB_HOST,
@@ -14,7 +14,7 @@ export type PostAttributes = {
     uri: string,
     did: string,
     postDetails: PostDetails | null,
-    reply: Reply | null,
+    reply: JetstreamReply | null,
     messageTest: string | null,
     reminderDate: string,
     repliedAt: string,
