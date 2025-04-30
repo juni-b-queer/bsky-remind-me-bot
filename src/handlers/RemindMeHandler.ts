@@ -42,7 +42,6 @@ export function responseGenerator(post: PostType) {
         if(suffixTimezone.length === 3){
             suffixTimezone = suffixTimezone.slice(0, 1) + suffixTimezone.slice(2);
         }
-        console.log(post.reminderDate)
         output = `Reminder set for ${getHumanReadableDateTimeStamp(post.reminderDate, tz)} ${suffixTimezone}`
     }catch (e){
         humanReadable = getHumanReadableDateTimeStamp(post.reminderDate);
