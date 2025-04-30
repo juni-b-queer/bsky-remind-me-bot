@@ -9,6 +9,7 @@ import {
 import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
 import {extractTimeFromInput, extractTimezone, extractTimezoneAbbreviation} from "time-decoding-utils";
+import {dbClient} from "./index.ts";
 
 export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
@@ -62,13 +63,13 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
         // Save post to database
 
-        await Post.create({
+        await dbClient.saveReminder({
             cid: message.commit.cid,
             uri: handlerAgent.generateURIFromCreateMessage(message),
             did: message.did,
             reply: handlerAgent.generateReplyFromMessage(message),
             messageText: postText,
-            reminderDate: reminderDate,
+            reminderDate: new Date(reminderDate),
             timezone: timezone
         })
         DebugLog.warn("INSERT", `Created Post with CID: ${message.commit.cid}`)
@@ -82,13 +83,7 @@ export class ReplyWithDataFromDatabase extends AbstractMessageAction {
     }
 
     async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
-        let post = await Post.findOne({
-            where: {
-                cid: {
-                    [Op.eq]: message.commit.cid
-                },
-            }
-        });
+        let post = await dbClient.getPostFromCid(message.commit.cid)
         if (!post) {
             DebugLog.error("REPLY", "Post not found in database")
             return;

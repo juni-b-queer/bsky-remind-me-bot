@@ -6,6 +6,7 @@ import {
 } from "bsky-event-handlers";
 import {InsertPostReminderInToDatabase, ReplyWithDataFromDatabase} from "../database/database-handler-actions.ts";
 import {Post, PostAttributes} from "../database/database-connection.ts";
+import {PostType} from "../database/schema.ts";
 
 const COMMAND = <string>Bun.env.REMIND_ME_COMMAND ?? "RemindMe"
 
@@ -32,7 +33,7 @@ export class RemindMeHandler extends MessageHandler{
     }
 }
 // @ts-ignore
-export function responseGenerator(post: PostAttributes) {
+export function responseGenerator(post: PostType) {
     let humanReadable: string;
     let output: string;
     try{
@@ -41,9 +42,10 @@ export function responseGenerator(post: PostAttributes) {
         if(suffixTimezone.length === 3){
             suffixTimezone = suffixTimezone.slice(0, 1) + suffixTimezone.slice(2);
         }
-        output = `Reminder set for ${getHumanReadableDateTimeStamp(post['reminderDate'], tz)} ${suffixTimezone}`
+        console.log(post.reminderDate)
+        output = `Reminder set for ${getHumanReadableDateTimeStamp(post.reminderDate, tz)} ${suffixTimezone}`
     }catch (e){
-        humanReadable = getHumanReadableDateTimeStamp(post['reminderDate']);
+        humanReadable = getHumanReadableDateTimeStamp(post.reminderDate);
         output = `Reminder set for ${humanReadable} \n(Timezone not recognized, falling back to America/Chicago)`
     }
     return output

@@ -10,6 +10,7 @@ import {
     JetstreamReply
 } from "bsky-event-handlers";
 import {generateReplyFromPostDetails, PostDetails} from "./utils/legacy-utils.ts"
+import {dbClient} from "./database";
 
 
 const remindBotHandlerAgent = new HandlerAgent(
@@ -31,24 +32,7 @@ let handlers = {
     },
 }
 
-async function authorizeDatabase() {
-    try {
-        await sequelize.authenticate();
-        DebugLog.warn("INIT", 'Connection to Database has been established successfully.')
-        await Post.sync({alter: true})
-        return true;
-    } catch (error) {
-        DebugLog.error("INIT", 'Connection to Database FAILED.')
-        console.error('Unable to connect to the database:', error);
-        await setTimeout(async () => {
-            await authorizeDatabase()
-        }, 10000)
-        return false;
-    }
-}
-
 async function initialize() {
-    await authorizeDatabase();
 
     await remindBotHandlerAgent.authenticate()
 
@@ -69,54 +53,27 @@ let interval = 500;
 setInterval(async function () {
     if (remindBotHandlerAgent.getAgent) {
         // Check for posts that require reminding
-        let postsToRemind = await Post.findAll({
-            where: {
-                [Op.and]: [
-                    {
-                        repliedAt: {
-                            [Op.is]: null
-                        },
-                    },
-                    {
-                        reminderDate: {
-                            [Op.lte]: new Date()
-                        }
-                    }
-                ],
-            }
-        });
+        let postsToRemind = await dbClient.getPostsToRemind();
         if (postsToRemind.length > 0) {
             DebugLog.warn('REMIND', `Found ${postsToRemind.length} posts to remind`)
         } else {
             DebugLog.log('REMIND', `Found ${postsToRemind.length} posts to remind`, 'debug')
         }
-        // console.log(`Found ${postsToRemind.length} posts to remind`)
-        // @ts-ignore
-        for (let postModel: PostAttributes of postsToRemind) {
-            let post: PostAttributes = <PostAttributes><unknown>postModel;
-            try {
-                // @ts-ignore
-                DebugLog.warn('REMIND', `Reminding post cid: ${post.cid}`)
-                // console.log(`Reminding post cid: ${post.cid}`)
-                if (post.reply !== null) {
-                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>post.reply)
 
+        for(const postToRemind of postsToRemind){
+            if (postToRemind.reply !== null) {
+                await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>postToRemind.reply)
+
+            } else {
+                if (postToRemind.postDetails !== null) {
+                    DebugLog.info("REMIND", "With post details")
+                    const reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>postToRemind.postDetails)
+                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
                 } else {
-                    if (post.postDetails !== null) {
-                        DebugLog.info("REMIND", "With post details")
-                        let reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>post.postDetails)
-                        await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
-                    } else {
-                        DebugLog.error("REMIND", "No reply or Post Details")
-                    }
+                    DebugLog.error("REMIND", "No reply or Post Details")
                 }
-
-            } catch (e) {
-                DebugLog.error('REMIND', `Failed to remind post: ${e}`)
             }
-            // @ts-ignore
-            postModel.repliedAt = new Date()
-            postModel.save()
         }
+        await dbClient.updateRemindedPosts(postsToRemind)
     }
 }, 60 * interval)
