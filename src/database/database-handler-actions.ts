@@ -13,7 +13,7 @@ import {dbClient} from "./index.ts";
 
 export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
-    constructor(private commandKey: string) {
+    constructor(private commandKey: string, private silent: boolean = false) {
         super();
     }
 
@@ -61,8 +61,12 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
         }
 
 
-        // Save post to database
 
+        let silent = this.silent;
+        if(!silent){
+            silent = !(await handlerAgent.getAgentCanReply(MessageHandler.getRootUriFromMessage(handlerAgent, message)))
+        }
+        // Save post to database
         await dbClient.saveReminder({
             cid: message.commit.cid,
             uri: handlerAgent.generateURIFromCreateMessage(message),
@@ -70,6 +74,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             reply: handlerAgent.generateReplyFromMessage(message),
             messageText: postText,
             reminderDate: new Date(reminderDate),
+            silent: silent,
             timezone: timezone
         })
         DebugLog.warn("INSERT", `Created Post with CID: ${message.commit.cid}`)
@@ -92,6 +97,38 @@ export class ReplyWithDataFromDatabase extends AbstractMessageAction {
         let responseText = this.formattingAction(post)
         await handlerAgent.createSkeet(responseText, handlerAgent.generateReplyFromMessage(message))
         DebugLog.warn("REPLY", `Responded with: ${responseText}`);
+        return;
+    }
+}
+
+export class MessageWithDataFromDatabase extends AbstractMessageAction {
+
+    constructor(private formattingAction: (arg0: any) => string) {
+        super();
+    }
+
+    async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
+        let post = await dbClient.getPostFromCid(message.commit.cid)
+        if (!post) {
+            DebugLog.error("REPLY", "Post not found in database")
+            return;
+        }
+
+        let responseText = this.formattingAction(post)
+
+        const uri = MessageHandler.getUriFromMessage(handlerAgent, message);
+        try{
+            await handlerAgent.sendMessageToUser(message.did, responseText, {
+                cid: message.commit.cid,
+                uri: uri
+            })
+        }catch(e){
+            DebugLog.error("REPLY", `Error sending message: ${e}`)
+            return;
+        }
+
+
+        DebugLog.warn("REPLY", `Sent DM with: ${responseText}`);
         return;
     }
 }

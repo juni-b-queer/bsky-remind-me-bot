@@ -2,9 +2,13 @@ import {
     InputIsCommandValidator,
     getHumanReadableDateTimeStamp,
     HandlerAgent,
-    MessageHandler, IsNewPost, CreateLikeAction, JetstreamEventCommit
+    MessageHandler, IsNewPost, CreateLikeAction, JetstreamEventCommit, CanReplyToThreadValidator, LogInputTextAction
 } from "bsky-event-handlers";
-import {InsertPostReminderInToDatabase, ReplyWithDataFromDatabase} from "../database/database-handler-actions.ts";
+import {
+    InsertPostReminderInToDatabase,
+    MessageWithDataFromDatabase,
+    ReplyWithDataFromDatabase
+} from "../database/database-handler-actions.ts";
 import {Post, PostAttributes} from "../database/database-connection.ts";
 import {PostType} from "../database/schema.ts";
 
@@ -21,8 +25,49 @@ export class RemindMeHandler extends MessageHandler{
             ],
             [
                 new InsertPostReminderInToDatabase(COMMAND),
-                new ReplyWithDataFromDatabase(responseGenerator),
-                new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage)
+                new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage),
+                // Can reply
+                new MessageHandler(
+                    [CanReplyToThreadValidator.make(MessageHandler.getRootUriFromMessage)],
+                    [
+                        LogInputTextAction.make("Reply"),
+                        new ReplyWithDataFromDatabase(responseGenerator),
+
+                    ],
+                    handlerAgent
+                ),
+                // Can't reply
+                new MessageHandler(
+                    [CanReplyToThreadValidator.make(MessageHandler.getRootUriFromMessage).not()],
+                    [
+                        LogInputTextAction.make("Message"),
+                        new MessageWithDataFromDatabase(responseGenerator)
+                    ],
+                    handlerAgent
+                ),
+            ],
+            handlerAgent,
+        );
+    }
+
+    async handle(handlerAgent:HandlerAgent, message: JetstreamEventCommit): Promise<void> {
+        return super.handle(handlerAgent, message);
+    }
+}
+
+export class SilentRemindMeHandler extends MessageHandler{
+    constructor(
+        public handlerAgent: HandlerAgent,
+    ) {
+        super(
+            [
+                IsNewPost.make(),
+                InputIsCommandValidator.make(`Silent${COMMAND}`, false)
+            ],
+            [
+                new InsertPostReminderInToDatabase(`Silent${COMMAND}`, true),
+                new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage),
+                new MessageWithDataFromDatabase(responseGenerator)
             ],
             handlerAgent,
         );

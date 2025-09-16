@@ -25,6 +25,7 @@ export interface SaveReminderParams {
     reply: JetstreamReply,
     messageText: string,
     reminderDate: Date,
+    silent: boolean,
     timezone: string
 }
 
@@ -44,6 +45,7 @@ export class DBClient {
                 reply: saveReminderParams.reply,
                 messageText: saveReminderParams.messageText,
                 reminderDate: saveReminderParams.reminderDate,
+                silent: saveReminderParams.silent,
                 timezone: saveReminderParams.timezone,
                 createdAt: new Date(),
                 modifiedAt: new Date()

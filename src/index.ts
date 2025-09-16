@@ -1,6 +1,6 @@
 import {Op} from "sequelize";
 import {Post, PostAttributes, sequelize} from "./database/database-connection.ts";
-import {RemindMeHandler} from "./handlers/RemindMeHandler.ts";
+import {RemindMeHandler, SilentRemindMeHandler} from "./handlers/RemindMeHandler.ts";
 import {
     BadBotHandler,
     DebugLog,
@@ -26,6 +26,7 @@ let handlers = {
     post: {
         c: [
             new RemindMeHandler(remindBotHandlerAgent),
+            new SilentRemindMeHandler(remindBotHandlerAgent),
             GoodBotHandler.make(remindBotHandlerAgent),
             BadBotHandler.make(remindBotHandlerAgent)
         ]
@@ -61,18 +62,27 @@ setInterval(async function () {
         }
 
         for(const postToRemind of postsToRemind){
-            if (postToRemind.reply !== null) {
-                await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>postToRemind.reply)
-
-            } else {
-                if (postToRemind.postDetails !== null) {
-                    DebugLog.info("REMIND", "With post details")
-                    const reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>postToRemind.postDetails)
-                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
+            if(postToRemind.silent){
+                await remindBotHandlerAgent.sendMessageToUser(postToRemind.did!, "⏰ This is your reminder! ⏰", {
+                    cid: postToRemind.cid,
+                    uri: postToRemind.uri,
+                })
+                DebugLog.info("REMIND", "Sent DM")
+            }else{
+                if (postToRemind.reply !== null) {
+                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>postToRemind.reply)
+                    DebugLog.info("REMIND", "Replied to post")
                 } else {
-                    DebugLog.error("REMIND", "No reply or Post Details")
+                    if (postToRemind.postDetails !== null) {
+                        DebugLog.info("REMIND", "With post details")
+                        const reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>postToRemind.postDetails)
+                        await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
+                    } else {
+                        DebugLog.error("REMIND", "No reply or Post Details")
+                    }
                 }
             }
+
         }
         await dbClient.updateRemindedPosts(postsToRemind)
     }

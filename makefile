@@ -30,3 +30,8 @@ backup-db:
 import-db:
 	./bin/import-db.sh `ls ./backups/*_bunreplybot.sql | tail -1`
 
+install:
+	bun install
+
+link:
+	bun link bsky-event-handlers
