@@ -45,14 +45,17 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
         } catch (e) {
             // @ts-ignore
             DebugLog.error("INSERT", e + `: ${message.record.text}`)
+            if(!this.silent){
+                let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
+                await replyAction.handle(handlerAgent, message);
+            }
             // console.log("ERROR - Exception")
-            let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
-            await replyAction.handle(handlerAgent, message);
+
             return;
         }
 
 
-        if (reminderDate === "") {
+        if (reminderDate === "" && !this.silent) {
             //reply with
             DebugLog.error("INSERT", `empty reminder date: ${postText}`)
             let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
