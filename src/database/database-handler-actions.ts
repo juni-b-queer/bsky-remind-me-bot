@@ -3,7 +3,7 @@ import {
     CreateSkeetMessage,
     DebugLog,
     HandlerAgent, JetstreamEventCommit, MessageHandler, NewSkeetRecord,
-    ReplyToSkeetAction,
+    ReplyToSkeetAction, SendDMAction,
     trimCommandInput
 } from "bsky-event-handlers";
 import {Post} from "./database-connection.ts";
@@ -16,6 +16,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
     constructor(private commandKey: string, private silent: boolean = false) {
         super();
     }
+
 
     async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
         // Get timing from post
@@ -48,6 +49,18 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             if(!this.silent){
                 let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
                 await replyAction.handle(handlerAgent, message);
+            }else {
+                try{
+                    let sendDmAction = SendDMAction.make(
+                        message.did,
+                        "The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"",
+                        MessageHandler.getSubjectFromMessage(handlerAgent, message))
+                    await sendDmAction.handle(handlerAgent, message)
+                }catch(e){
+                    DebugLog.error("INSERT", `Error sending message: ${e}`)
+                    return;
+                }
+
             }
             // console.log("ERROR - Exception")
 
@@ -55,11 +68,25 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
         }
 
 
-        if (reminderDate === "" && !this.silent) {
+        if (reminderDate === "") {
             //reply with
+            if(!this.silent){
+                let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
+                await replyAction.handle(handlerAgent, message);
+            }else {
+                try{
+                    let sendDmAction = SendDMAction.make(
+                        message.did,
+                        "The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"",
+                        MessageHandler.getSubjectFromMessage(handlerAgent, message))
+                    await sendDmAction.handle(handlerAgent, message)
+                }catch(e){
+                    DebugLog.error("INSERT", `Error sending message: ${e}`)
+                    return;
+                }
+            }
             DebugLog.error("INSERT", `empty reminder date: ${postText}`)
-            let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
-            await replyAction.handle(handlerAgent, message);
+
             return;
         }
 
