@@ -62,24 +62,44 @@ setInterval(async function () {
         }
 
         for(const postToRemind of postsToRemind){
+
             if(postToRemind.silent){
-                await remindBotHandlerAgent.sendMessageToUser(postToRemind.did!, "⏰ This is your reminder! ⏰", {
-                    cid: postToRemind.cid,
-                    uri: postToRemind.uri,
-                })
-                DebugLog.info("REMIND", "Sent DM")
+                try{
+                    await remindBotHandlerAgent.sendMessageToUser(postToRemind.did!, "⏰ This is your reminder! ⏰", {
+                        cid: postToRemind.cid,
+                        uri: postToRemind.uri,
+                    })
+                    DebugLog.info("REMIND", "Sent DM")
+                }catch(e: any){
+                    DebugLog.error("REMIND", `Failed to send DM: ${postToRemind.id}`)
+                    DebugLog.error("REMIND", e?.message)
+                }
+
             }else{
                 if (postToRemind.reply !== null) {
-                    await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>postToRemind.reply)
-                    DebugLog.info("REMIND", "Replied to post")
-                } else {
-                    if (postToRemind.postDetails !== null) {
-                        DebugLog.info("REMIND", "With post details")
-                        const reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>postToRemind.postDetails)
-                        await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
-                    } else {
-                        DebugLog.error("REMIND", "No reply or Post Details")
+                    try{
+                        await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>postToRemind.reply)
+                        DebugLog.info("REMIND", "Replied to post")
+                    }catch(e: any){
+                        DebugLog.error("REMIND", `Failed to Reply to post: ${postToRemind.id}`)
+                        DebugLog.error("REMIND", e?.message)
                     }
+
+                } else {
+                    try{
+                        if (postToRemind.postDetails !== null) {
+                            DebugLog.info("REMIND", "With post details")
+                            const reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>postToRemind.postDetails)
+                            await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
+                        } else {
+                            DebugLog.error("REMIND", "No reply or Post Details")
+
+                        }
+                    }catch(e: any){
+                        DebugLog.error("REMIND", `Failed to Reply to post: ${postToRemind.id}`)
+                        DebugLog.error("REMIND", e?.message)
+                    }
+
                 }
             }
 
