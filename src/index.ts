@@ -60,9 +60,8 @@ setInterval(async function () {
         } else {
             DebugLog.log('REMIND', `Found ${postsToRemind.length} posts to remind`, 'debug')
         }
-
+        const remindedPosts = []
         for(const postToRemind of postsToRemind){
-
             if(postToRemind.silent){
                 try{
                     await remindBotHandlerAgent.sendMessageToUser(postToRemind.did!, "⏰ This is your reminder! ⏰", {
@@ -70,6 +69,7 @@ setInterval(async function () {
                         uri: postToRemind.uri,
                     })
                     DebugLog.info("REMIND", "Sent DM")
+                    remindedPosts.push(postToRemind)
                 }catch(e: any){
                     DebugLog.error("REMIND", `Failed to send DM: ${postToRemind.id}`)
                     DebugLog.error("REMIND", e?.message)
@@ -80,6 +80,7 @@ setInterval(async function () {
                     try{
                         await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>postToRemind.reply)
                         DebugLog.info("REMIND", "Replied to post")
+                        remindedPosts.push(postToRemind)
                     }catch(e: any){
                         DebugLog.error("REMIND", `Failed to Reply to post: ${postToRemind.id}`)
                         DebugLog.error("REMIND", e?.message)
@@ -91,6 +92,7 @@ setInterval(async function () {
                             DebugLog.info("REMIND", "With post details")
                             const reply: JetstreamReply = generateReplyFromPostDetails(<PostDetails>postToRemind.postDetails)
                             await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
+                            remindedPosts.push(postToRemind)
                         } else {
                             DebugLog.error("REMIND", "No reply or Post Details")
 
@@ -104,6 +106,7 @@ setInterval(async function () {
             }
 
         }
-        await dbClient.updateRemindedPosts(postsToRemind)
+        await dbClient.updateRemindedPosts(remindedPosts)
+
     }
 }, 60 * interval)
