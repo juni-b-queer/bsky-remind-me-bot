@@ -71,6 +71,7 @@ setInterval(async function () {
                     remindedPosts.push(postToRemind)
                 }catch(e: any){
                     DebugLog.error("REMIND", `Failed to send DM to ${postToRemind.did}: ${postToRemind.id} \n ${e?.message}`)
+                    remindedPosts.push(postToRemind)
                 }
             }else{
                 if (postToRemind.reply !== null) {
@@ -80,6 +81,7 @@ setInterval(async function () {
                         remindedPosts.push(postToRemind)
                     }catch(e: any){
                         DebugLog.error("REMIND", `Failed to Reply to ${postToRemind.did} post: ${postToRemind.id} \n ${e?.message}`)
+                        remindedPosts.push(postToRemind)
                     }
 
                 } else {
@@ -90,10 +92,12 @@ setInterval(async function () {
                             await remindBotHandlerAgent.createSkeet("⏰ This is your reminder! ⏰", <JetstreamReply>reply)
                             remindedPosts.push(postToRemind)
                         } else {
-                            DebugLog.error("REMIND", "No reply or Post Details")
+                            DebugLog.error("REMIND", `No reply or Post Details for ID ${postToRemind.id}, did ${postToRemind.did}`)
+                            remindedPosts.push(postToRemind)
                         }
                     }catch(e: any){
                         DebugLog.error("REMIND", `Failed to Reply to ${postToRemind.did} post: ${postToRemind.id}  \n ${e?.message}`)
+                        remindedPosts.push(postToRemind)
                     }
 
                 }
