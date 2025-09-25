@@ -45,7 +45,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             reminderDate = extractTimeFromInput(timeString, timezone, postTime)
         } catch (e) {
             // @ts-ignore
-            DebugLog.error("INSERT", e + `: ${message.record.text}`)
+            DebugLog.error("INSERT", `Error inserting reminder for ${message.did}: \n ${postText} \n  ${e}`)
             if(!this.silent){
                 let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
                 await replyAction.handle(handlerAgent, message);
@@ -57,7 +57,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
                         MessageHandler.getSubjectFromMessage(handlerAgent, message))
                     await sendDmAction.handle(handlerAgent, message)
                 }catch(e){
-                    DebugLog.error("INSERT", `Error sending message: ${e}`)
+                    DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
                     return;
                 }
 
@@ -81,11 +81,11 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
                         MessageHandler.getSubjectFromMessage(handlerAgent, message))
                     await sendDmAction.handle(handlerAgent, message)
                 }catch(e){
-                    DebugLog.error("INSERT", `Error sending message: ${e}`)
+                    DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
                     return;
                 }
             }
-            DebugLog.error("INSERT", `empty reminder date: ${postText}`)
+            DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText}`)
 
             return;
         }
@@ -120,7 +120,7 @@ export class ReplyWithDataFromDatabase extends AbstractMessageAction {
     async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
         let post = await dbClient.getPostFromCid(message.commit.cid)
         if (!post) {
-            DebugLog.error("REPLY", "Post not found in database")
+            DebugLog.error("REPLY", `Post ${message.commit.cid} not found in database`)
             return;
         }
 
@@ -140,7 +140,7 @@ export class MessageWithDataFromDatabase extends AbstractMessageAction {
     async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
         let post = await dbClient.getPostFromCid(message.commit.cid)
         if (!post) {
-            DebugLog.error("REPLY", "Post not found in database")
+            DebugLog.error("REPLY", `Post ${message.commit.cid} not found in database`)
             return;
         }
 
@@ -153,7 +153,7 @@ export class MessageWithDataFromDatabase extends AbstractMessageAction {
                 uri: uri
             })
         }catch(e){
-            DebugLog.error("REPLY", `Error sending message: ${e}`)
+            DebugLog.error("REPLY", `Error sending message to ${message.did}: \n ${uri} \n ${e}`)
             return;
         }
 

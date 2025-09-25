@@ -70,7 +70,7 @@ setInterval(async function () {
                     DebugLog.info("REMIND", "Sent DM")
                     remindedPosts.push(postToRemind)
                 }catch(e: any){
-                    DebugLog.error("REMIND", `Failed to send DM: ${postToRemind.id} \n ${e?.message}`)
+                    DebugLog.error("REMIND", `Failed to send DM to ${postToRemind.did}: ${postToRemind.id} \n ${e?.message}`)
                 }
             }else{
                 if (postToRemind.reply !== null) {
@@ -79,7 +79,7 @@ setInterval(async function () {
                         DebugLog.info("REMIND", "Replied to post")
                         remindedPosts.push(postToRemind)
                     }catch(e: any){
-                        DebugLog.error("REMIND", `Failed to Reply to post: ${postToRemind.id} \n ${e?.message}`)
+                        DebugLog.error("REMIND", `Failed to Reply to ${postToRemind.did} post: ${postToRemind.id} \n ${e?.message}`)
                     }
 
                 } else {
@@ -93,7 +93,7 @@ setInterval(async function () {
                             DebugLog.error("REMIND", "No reply or Post Details")
                         }
                     }catch(e: any){
-                        DebugLog.error("REMIND", `Failed to Reply to post: ${postToRemind.id}  \n ${e?.message}`)
+                        DebugLog.error("REMIND", `Failed to Reply to ${postToRemind.did} post: ${postToRemind.id}  \n ${e?.message}`)
                     }
 
                 }
