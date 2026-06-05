@@ -21,35 +21,16 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
 
     async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
+        let silent = this.silent;
+        if(!silent){
+            silent = !(await handlerAgent.getAgentCanReply(MessageHandler.getRootUriFromMessage(handlerAgent, message)))
+        }
+
         // Get timing from post
         let timeString: string | boolean;
         let reminderDate: string | Date | null;
         let timezone: boolean | string;
         let postText: string
-
-
-
-        // if (reminderDate === "") {
-        //     //reply with
-        //     if(!this.silent){
-        //         let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
-        //         await replyAction.handle(handlerAgent, message);
-        //     }else {
-        //         try{
-        //             let sendDmAction = SendDMAction.make(
-        //                 message.did,
-        //                 "The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"",
-        //                 MessageHandler.getSubjectFromMessage(handlerAgent, message))
-        //             await sendDmAction.handle(handlerAgent, message)
-        //         }catch(e){
-        //             DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
-        //             return;
-        //         }
-        //     }
-        //     DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText}`)
-        //
-        //     return;
-        // }
 
         const skeetRecord: NewSkeetRecord = message.commit.record as NewSkeetRecord;
         postText = skeetRecord.text ?? "";
@@ -119,12 +100,31 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             }
         }
 
+        if (reminderDate === "") {
+            //reply with
+            if(!silent){
+                let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
+                await replyAction.handle(handlerAgent, message);
+            }else {
+                try{
+                    let sendDmAction = SendDMAction.make(
+                        message.did,
+                        "The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"",
+                        MessageHandler.getSubjectFromMessage(handlerAgent, message))
+                    await sendDmAction.handle(handlerAgent, message)
+                }catch(e){
+                    DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
+                    return;
+                }
+            }
+            DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText}`)
 
-
-        let silent = this.silent;
-        if(!silent){
-            silent = !(await handlerAgent.getAgentCanReply(MessageHandler.getRootUriFromMessage(handlerAgent, message)))
+            return;
         }
+
+
+
+
         // Save post to database
         await dbClient.saveReminder({
             cid: message.commit.cid,
