@@ -5,7 +5,7 @@ import {
     MessageHandler, IsNewPost, CreateLikeAction, JetstreamEventCommit, CanReplyToThreadValidator, LogInputTextAction
 } from "bsky-event-handlers";
 import {
-    InsertPostReminderInToDatabase,
+    InsertPostReminderInToDatabase, InsertPostReminderInToDatabaseNewParser,
     MessageWithDataFromDatabase,
     ReplyWithDataFromDatabase
 } from "../database/database-handler-actions.ts";
@@ -30,7 +30,7 @@ export class RemindMeHandler extends MessageHandler{
                 new MessageHandler(
                     [CanReplyToThreadValidator.make(MessageHandler.getRootUriFromMessage)],
                     [
-                        new InsertPostReminderInToDatabase(COMMAND),
+                        new InsertPostReminderInToDatabaseNewParser(COMMAND),
                         new ReplyWithDataFromDatabase(responseGenerator),
 
                     ],
@@ -40,7 +40,7 @@ export class RemindMeHandler extends MessageHandler{
                 new MessageHandler(
                     [CanReplyToThreadValidator.make(MessageHandler.getRootUriFromMessage).not()],
                     [
-                        new InsertPostReminderInToDatabase(COMMAND, true),
+                        new InsertPostReminderInToDatabaseNewParser(COMMAND, true),
                         new MessageWithDataFromDatabase(responseGenerator)
                     ],
                     handlerAgent

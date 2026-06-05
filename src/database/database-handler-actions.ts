@@ -11,6 +11,7 @@ import {Op} from "sequelize";
 import {extractTimeFromInput, extractTimezone, extractTimezoneAbbreviation} from "time-decoding-utils";
 import {dbClient} from "./index.ts";
 import {PostTypesEnum} from "./schema.ts";
+import * as chrono from "chrono-node";
 
 export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
@@ -27,7 +28,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
         let postText: string
         try {
             const skeetRecord: NewSkeetRecord = message.commit.record as NewSkeetRecord;
-             postText = skeetRecord.text ?? "";
+            postText = skeetRecord.text ?? "";
             timeString = trimCommandInput(postText, this.commandKey);
             if (typeof timeString == "boolean") {
                 DebugLog.error("INSERT", `Trim command returned false: ${postText}`)
@@ -120,6 +121,130 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             postType: PostTypesEnum.REMINDER,
             silent: silent,
             timezone: timezone
+        })
+        DebugLog.warn("INSERT", `Created Post with CID: ${message.commit.cid}`)
+    }
+}
+
+export class InsertPostReminderInToDatabaseNewParser extends AbstractMessageAction {
+
+    constructor(private commandKey: string, private silent: boolean = false) {
+        super();
+    }
+
+
+    async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
+        let silent = this.silent;
+        if(!silent){
+            silent = !(await handlerAgent.getAgentCanReply(MessageHandler.getRootUriFromMessage(handlerAgent, message)))
+        }
+
+        // Get timing from post
+        let timeString: string | boolean;
+        let reminderDate: string | Date | null;
+        let timezone: boolean | string;
+        let postText: string
+
+        const skeetRecord: NewSkeetRecord = message.commit.record as NewSkeetRecord;
+        postText = skeetRecord.text ?? "";
+        timeString = trimCommandInput(postText, this.commandKey);
+        if(typeof timeString === "boolean"){
+            DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText}`)
+            return;
+        }
+        reminderDate = chrono.parseDate(timeString);
+
+        if(!reminderDate){
+            DebugLog.warn("DATE PARSE", "Falling back to 'in' prefix for text: " + postText)
+            timeString = `in ${timeString}`
+            reminderDate = chrono.parseDate(timeString);
+        }
+
+        if(!reminderDate){
+            DebugLog.error("DATE PARSE", "Failed to use new parser: " + postText)
+            try {
+                const skeetRecord: NewSkeetRecord = message.commit.record as NewSkeetRecord;
+                postText = skeetRecord.text ?? "";
+                timeString = trimCommandInput(postText, this.commandKey);
+                if (typeof timeString == "boolean") {
+                    DebugLog.error("INSERT", `Trim command returned false: ${postText}`)
+                    return;
+                }
+                timezone = extractTimezoneAbbreviation(timeString)
+                if (typeof timezone === "boolean") {
+                    timezone = extractTimezone(timeString)
+                    if (typeof timezone === "boolean") {
+                        timezone = ""
+                    }
+                }
+
+                const postTime = new Date(skeetRecord.createdAt);
+
+                let noTimezone = false;
+                if (!timezone) {
+                    timezone = "America/Chicago"
+                    noTimezone = true;
+                }
+
+                reminderDate = extractTimeFromInput(timeString, timezone, postTime)
+
+            }
+            catch (e) {
+                // @ts-ignore
+                DebugLog.error("INSERT", `Error inserting reminder for ${message.did}: \n ${postText} \n  ${e}`)
+                if(!this.silent){
+                    let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
+                    await replyAction.handle(handlerAgent, message);
+                }else {
+                    try{
+                        let sendDmAction = SendDMAction.make(
+                            message.did,
+                            "The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"",
+                            MessageHandler.getSubjectFromMessage(handlerAgent, message))
+                        await sendDmAction.handle(handlerAgent, message)
+                    }catch(e){
+                        DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
+                        return;
+                    }
+
+                }
+                // console.log("ERROR - Exception")
+
+                return;
+            }
+        }
+
+        if (reminderDate === "") {
+            //reply with
+            if(!silent){
+                let replyAction = new ReplyToSkeetAction("The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"")
+                await replyAction.handle(handlerAgent, message);
+            }else {
+                try{
+                    let sendDmAction = SendDMAction.make(
+                        message.did,
+                        "The provided input string is invalid. Please use a format like \"1 month, 2 days\" or \"12/24/2024 at 1pm\"",
+                        MessageHandler.getSubjectFromMessage(handlerAgent, message))
+                    await sendDmAction.handle(handlerAgent, message)
+                }catch(e){
+                    DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
+                }
+            }
+            DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText} \n https://bsky.app/profile/${message.did}/post/${message.commit.rkey}`)
+            return;
+        }
+
+        // Save post to database
+        await dbClient.saveReminder({
+            cid: message.commit.cid,
+            uri: handlerAgent.generateURIFromCreateMessage(message),
+            did: message.did,
+            reply: handlerAgent.generateReplyFromMessage(message),
+            messageText: postText,
+            reminderDate: new Date(reminderDate),
+            postType: PostTypesEnum.REMINDER,
+            silent: silent,
+            timezone: ""
         })
         DebugLog.warn("INSERT", `Created Post with CID: ${message.commit.cid}`)
     }
