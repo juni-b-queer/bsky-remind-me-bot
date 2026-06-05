@@ -65,7 +65,7 @@ export class SilentRemindMeHandler extends MessageHandler{
                 InputIsCommandValidator.make(`Silent${COMMAND}`, false)
             ],
             [
-                new InsertPostReminderInToDatabase(`Silent${COMMAND}`, true),
+                new InsertPostReminderInToDatabaseNewParser(`Silent${COMMAND}`, true),
                 new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage),
                 new MessageWithDataFromDatabase(responseGenerator)
             ],
