@@ -4,7 +4,7 @@ import {
     InputIsCommandValidator,
     IsNewPost,
     JetstreamEventCommit,
-    MessageHandler
+    MessageHandler, PostedByUserValidator
 } from "bsky-event-handlers";
 import {
     InsertRepostOrDeleteIntoDatabase
@@ -19,6 +19,7 @@ export class RepostMeHandler extends MessageHandler{
     ) {
         super(
             [
+                PostedByUserValidator.make(handlerAgent.getDid),
                 IsNewPost.make(),
                 InputIsCommandValidator.make(REPOST_COMMAND, false)
             ],
