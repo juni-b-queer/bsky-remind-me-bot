@@ -155,12 +155,13 @@ export class InsertPostReminderInToDatabaseNewParser extends AbstractMessageActi
         reminderDate = chrono.parseDate(timeString);
 
         if(!reminderDate){
+            DebugLog.warn("DATE PARSE", "Falling back to 'in' prefix for text: " + postText)
             timeString = `in ${timeString}`
             reminderDate = chrono.parseDate(timeString);
         }
 
         if(!reminderDate){
-            DebugLog.warn("DATE PARSE", "Falling back to 'in' prefix for text: " + postText)
+            DebugLog.error("DATE PARSE", "Failed to use new parser: " + postText)
             try {
                 const skeetRecord: NewSkeetRecord = message.commit.record as NewSkeetRecord;
                 postText = skeetRecord.text ?? "";
@@ -227,11 +228,9 @@ export class InsertPostReminderInToDatabaseNewParser extends AbstractMessageActi
                     await sendDmAction.handle(handlerAgent, message)
                 }catch(e){
                     DebugLog.error("INSERT", `Error sending message to ${message.did}: ${e}`)
-                    return;
                 }
             }
-            DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText}`)
-
+            DebugLog.error("INSERT", `empty reminder date: ${message.did} \n ${postText} \n https://bsky.app/profile/${message.did}/post/${message.commit.rkey}`)
             return;
         }
 
