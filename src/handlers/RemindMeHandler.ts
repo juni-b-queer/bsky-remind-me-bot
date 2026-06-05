@@ -90,7 +90,7 @@ export function responseGenerator(post: PostType) {
         output = `Reminder set for ${getHumanReadableDateTimeStamp(post.reminderDate, tz)} ${suffixTimezone}`
     }catch (e){
         humanReadable = getHumanReadableDateTimeStamp(post.reminderDate);
-        output = `Reminder set for ${humanReadable} \n(Timezone not recognized, falling back to America/Chicago)`
+        output = `Reminder set for ${humanReadable}`;// \n(Timezone not recognized, falling back to America/Chicago)`
     }
     return output
 }
