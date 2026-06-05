@@ -4,7 +4,7 @@ import {
     InputIsCommandValidator,
     IsNewPost,
     JetstreamEventCommit, LogMessageAction,
-    MessageHandler, PostedByUserValidator
+    MessageHandler, PostedByUserValidator, ReplyingToBotValidator
 } from "bsky-event-handlers";
 import {
     InsertRepostOrDeleteIntoDatabase,
@@ -20,6 +20,7 @@ export class DeleteMeHandler extends MessageHandler{
         super(
             [
                 PostedByUserValidator.make(handlerAgent.getDid),
+                ReplyingToBotValidator.make(),
                 IsNewPost.make(),
                 InputIsCommandValidator.make(DELETE_COMMAND, false)
             ],
