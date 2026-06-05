@@ -11,7 +11,7 @@ import {
 } from "../database/database-handler-actions.ts";
 import {PostTypesEnum} from "../database/schema.ts";
 
-const DELETE_COMMAND = <string>Bun.env.DELETE_ME_COMMAND ?? "TDeleteMe"
+const DELETE_COMMAND = <string>Bun.env.DELETE_ME_COMMAND ?? "DeleteMe"
 
 export class DeleteMeHandler extends MessageHandler{
     constructor(

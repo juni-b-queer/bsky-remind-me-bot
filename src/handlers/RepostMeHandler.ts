@@ -11,7 +11,7 @@ import {
 } from "../database/database-handler-actions.ts";
 import {PostTypesEnum} from "../database/schema.ts";
 
-const REPOST_COMMAND = <string>Bun.env.REPOST_ME_COMMAND ?? "TRepostMe"
+const REPOST_COMMAND = <string>Bun.env.REPOST_ME_COMMAND ?? "RepostMe"
 
 export class RepostMeHandler extends MessageHandler{
     constructor(
