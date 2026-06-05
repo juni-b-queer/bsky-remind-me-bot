@@ -18,6 +18,7 @@
     "@atproto/api": "^0.13.19",
     "atproto-firehose": "^0.2.2",
     "bsky-event-handlers": "2.2.0-beta.3",
+    "chrono-node": "^2.9.1",
     "date-fns": "^2.30.0",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
