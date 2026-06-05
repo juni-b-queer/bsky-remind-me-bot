@@ -23,7 +23,6 @@ export class DeleteMeHandler extends MessageHandler{
                 InputIsCommandValidator.make(DELETE_COMMAND, false)
             ],
             [
-                LogMessageAction.make(),
                 new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage),
                 new InsertRepostOrDeleteIntoDatabase(DELETE_COMMAND, PostTypesEnum.DELETE),
                 new DeleteSkeetAction(MessageHandler.getUriFromMessage)
