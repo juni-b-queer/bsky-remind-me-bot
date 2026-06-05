@@ -43,7 +43,19 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
             const postTime = new Date(skeetRecord.createdAt);
 
+            let noTimezone = false;
+            if (!timezone) {
+                timezone = "America/Chicago"
+                noTimezone = true;
+            }
+
             reminderDate = extractTimeFromInput(timeString, timezone, postTime)
+
+            if(noTimezone){
+                timezone = "";
+            }
+
+
         } catch (e) {
             // @ts-ignore
             DebugLog.error("INSERT", `Error inserting reminder for ${message.did}: \n ${postText} \n  ${e}`)
