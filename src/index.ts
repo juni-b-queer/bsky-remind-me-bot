@@ -1,13 +1,15 @@
 import {Op} from "sequelize";
 import {Post, PostAttributes, sequelize} from "./database/database-connection.ts";
 import {RemindMeHandler, SilentRemindMeHandler} from "./handlers/RemindMeHandler.ts";
+import {DeleteMeHandler} from "./handlers/DeleteMeHandler.ts";
+import {RepostMeHandler} from "./handlers/RepostMeHandler.ts";
 import {
     BadBotHandler,
     DebugLog,
     GoodBotHandler,
     HandlerAgent,
     JetstreamSubscription,
-    JetstreamReply
+    JetstreamReply, DeleteSkeetAction
 } from "bsky-event-handlers";
 import {generateReplyFromPostDetails, PostDetails} from "./utils/legacy-utils.ts"
 import {dbClient} from "./database";
@@ -18,6 +20,13 @@ const remindBotHandlerAgent = new HandlerAgent(
     <string>Bun.env.REMIND_BOT_BSKY_PASSWORD,
 );
 
+const repostAndDeleteHandlerAgent = new HandlerAgent(
+    "repost-and-delete-bot",
+    <string>Bun.env.REPOST_AND_DELETE_BOT_BSKY_HANDLE,
+    <string>Bun.env.REPOST_AND_DELETE_BOT_BSKY_PASSWORD,
+);
+
+
 let jetstreamSubscription: JetstreamSubscription;
 
 
@@ -27,7 +36,9 @@ let handlers = {
             new RemindMeHandler(remindBotHandlerAgent),
             new SilentRemindMeHandler(remindBotHandlerAgent),
             GoodBotHandler.make(remindBotHandlerAgent),
-            BadBotHandler.make(remindBotHandlerAgent)
+            BadBotHandler.make(remindBotHandlerAgent),
+            new RepostMeHandler(repostAndDeleteHandlerAgent),
+            new DeleteMeHandler(repostAndDeleteHandlerAgent)
         ]
     },
 }
@@ -35,6 +46,7 @@ let handlers = {
 async function initialize() {
 
     await remindBotHandlerAgent.authenticate()
+    await repostAndDeleteHandlerAgent.authenticate()
 
     DebugLog.info("INIT", 'Initialized!')
 
@@ -107,4 +119,58 @@ setInterval(async function () {
         await dbClient.updateRemindedPosts(remindedPosts)
 
     }
+
+    if (repostAndDeleteHandlerAgent.getAgent) {
+        // Check for posts that require reminding
+        const postToUpdate = []
+        try{
+            let postsToRepost = await dbClient.getPostsToRepost();
+            if (postsToRepost.length > 0) {
+                DebugLog.warn('REPOST', `Found ${postsToRepost.length} posts to repost`)
+            } else {
+                DebugLog.log('REPOST', `Found ${postsToRepost.length} posts to repost`, 'debug')
+            }
+
+            for(const postToRepost of postsToRepost){
+                try{
+                    await repostAndDeleteHandlerAgent.reskeetSkeet(postToRepost.reply!.parent.uri, postToRepost.reply!.parent.cid)
+                    DebugLog.info("REPOST", "Reposted post")
+                    postToUpdate.push(postToRepost)
+                }catch(e: any){
+                    DebugLog.error("REPOST", `Failed to Repost post: ${postToRepost.id} \n ${e?.message}`)
+                    postToUpdate.push(postToRepost)
+                }
+            }
+
+        }catch(e: any){
+            DebugLog.error("REPOST", `Failed to Repost posts: ${e?.message}`)
+        }
+
+        try{
+            let postsToDelete = await dbClient.getPostsToDelete();
+            if (postsToDelete.length > 0) {
+                DebugLog.warn('DELETE', `Found ${postsToDelete.length} posts to delete`)
+            } else {
+                DebugLog.log('DELETE', `Found ${postsToDelete.length} posts to delete`, 'debug')
+            }
+
+            for(const postToDelete of postsToDelete){
+                try{
+                    await repostAndDeleteHandlerAgent.deleteSkeet(postToDelete.reply!.parent.uri)
+                    DebugLog.info("DELETE", "Deleted post")
+                    postToUpdate.push(postToDelete)
+                }catch(e: any){
+                    DebugLog.error("DELETE", `Failed to delete post: ${postToDelete.id} \n ${e?.message}`)
+                    postToUpdate.push(postToDelete)
+                }
+            }
+
+        }catch(e: any){
+            DebugLog.error("DELETE", `Failed to delete posts: ${e?.message}`)
+        }
+
+        await dbClient.updateRemindedPosts(postToUpdate)
+    }
+
+
 }, 60 * interval)

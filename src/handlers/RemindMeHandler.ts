@@ -31,7 +31,6 @@ export class RemindMeHandler extends MessageHandler{
                     [CanReplyToThreadValidator.make(MessageHandler.getRootUriFromMessage)],
                     [
                         new InsertPostReminderInToDatabase(COMMAND),
-                        LogInputTextAction.make("Reply"),
                         new ReplyWithDataFromDatabase(responseGenerator),
 
                     ],
@@ -42,7 +41,6 @@ export class RemindMeHandler extends MessageHandler{
                     [CanReplyToThreadValidator.make(MessageHandler.getRootUriFromMessage).not()],
                     [
                         new InsertPostReminderInToDatabase(COMMAND, true),
-                        LogInputTextAction.make("Message"),
                         new MessageWithDataFromDatabase(responseGenerator)
                     ],
                     handlerAgent

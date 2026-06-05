@@ -13,6 +13,7 @@ export const posts = mysqlTable('Posts', {
     reminderDate: datetime({ mode: 'string'}),
     repliedAt: datetime({ mode: 'string'}),
     silent: boolean(),
+    postType: varchar({ length: 255 }),
     timezone: varchar({ length: 255 }),
     createdAt: datetime({ mode: 'string'}),
     updatedAt: datetime({ mode: 'string'}),
@@ -29,8 +30,16 @@ export type PostType = {
     reminderDate: string;
     repliedAt: Date | null;
     silent: boolean;
+    postType: PostType | null;
     timezone: string;
     // Drizzle typically adds these fields
     createdAt?: Date;
     updatedAt?: Date;
 };
+
+export enum PostTypesEnum {
+    REMINDER = 'reminder',
+    REPOST = 'repost',
+    DELETE = 'delete',
+}
+

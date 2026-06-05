@@ -10,6 +10,7 @@ import {Post} from "./database-connection.ts";
 import {Op} from "sequelize";
 import {extractTimeFromInput, extractTimezone, extractTimezoneAbbreviation} from "time-decoding-utils";
 import {dbClient} from "./index.ts";
+import {PostTypesEnum} from "./schema.ts";
 
 export class InsertPostReminderInToDatabase extends AbstractMessageAction {
 
@@ -104,6 +105,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             reply: handlerAgent.generateReplyFromMessage(message),
             messageText: postText,
             reminderDate: new Date(reminderDate),
+            postType: PostTypesEnum.REMINDER,
             silent: silent,
             timezone: timezone
         })
@@ -160,5 +162,77 @@ export class MessageWithDataFromDatabase extends AbstractMessageAction {
 
         DebugLog.warn("REPLY", `Sent DM with: ${responseText}`);
         return;
+    }
+}
+
+
+export class InsertRepostOrDeleteIntoDatabase extends AbstractMessageAction {
+
+    constructor(private commandKey: string, private postType: PostTypesEnum) {
+        super();
+    }
+
+
+    async handle(handlerAgent: HandlerAgent, message: JetstreamEventCommit ): Promise<any> {
+        // Get timing from post
+        let timeString: string | boolean;
+        let reminderDate: string;
+        let timezone: boolean | string;
+        let postText: string
+        try {
+            const skeetRecord: NewSkeetRecord = message.commit.record as NewSkeetRecord;
+            postText = skeetRecord.text ?? "";
+            timeString = trimCommandInput(postText, this.commandKey);
+            if (typeof timeString == "boolean") {
+                DebugLog.error("INSERT", `Trim command returned false: ${postText}`)
+                return;
+            }
+            timezone = extractTimezoneAbbreviation(timeString)
+            if (typeof timezone === "boolean") {
+                timezone = extractTimezone(timeString)
+                if (typeof timezone === "boolean") {
+                    timezone = ""
+                }
+            }
+
+            const postTime = new Date(skeetRecord.createdAt);
+
+            reminderDate = extractTimeFromInput(timeString, timezone, postTime)
+        } catch (e) {
+            // @ts-ignore
+            DebugLog.error("INSERT", `Error inserting ${this.postType} for ${message.did}: \n ${postText} \n  ${e}`)
+            return;
+        }
+
+
+        if (reminderDate === "") {
+            DebugLog.error("INSERT", `empty ${this.postType} date: ${message.did} \n ${postText}`)
+
+            return;
+        }
+
+        const reply = {
+                root: {
+                    uri: message.commit.record!.reply!.root.uri,
+                    cid: message.commit.record!.reply!.root.cid
+                },
+                parent: {
+                    uri: message.commit.record!.reply!.parent.uri,
+                    cid: message.commit.cid
+                }
+            }
+        // Save post to database
+        await dbClient.saveReminder({
+            cid: message.commit.cid,
+            uri: handlerAgent.generateURIFromCreateMessage(message),
+            did: message.did,
+            reply: reply,
+            messageText: postText,
+            reminderDate: new Date(reminderDate),
+            postType: this.postType,
+            silent: false,
+            timezone: timezone
+        })
+        DebugLog.warn("INSERT", `Created Post to ${this.postType} with CID: ${message.commit.cid}`)
     }
 }

@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/mysql2'
 import * as schema from './schema'
 import { createPool } from 'mysql2/promise'
 import {JetstreamReply} from "bsky-event-handlers";
-import {posts, PostType} from "./schema";
+import {posts, PostType, PostTypesEnum} from "./schema";
 import {eq} from "drizzle-orm";
 import {inArray} from "drizzle-orm/sql/expressions/conditions";
 
@@ -26,6 +26,7 @@ export interface SaveReminderParams {
     messageText: string,
     reminderDate: Date,
     silent: boolean,
+    postType: PostTypesEnum | null,
     timezone: string
 }
 
@@ -46,6 +47,7 @@ export class DBClient {
                 messageText: saveReminderParams.messageText,
                 reminderDate: saveReminderParams.reminderDate,
                 silent: saveReminderParams.silent,
+                postType: saveReminderParams.postType,
                 timezone: saveReminderParams.timezone,
                 createdAt: new Date(),
                 modifiedAt: new Date()
@@ -64,9 +66,38 @@ export class DBClient {
     public async getPostsToRemind(): Promise<PostType[]>{
         const now = new Date()
         const posts = await this.db.query.posts.findMany({
-            where: (posts, { and, lte, isNull }) => and(
+            where: (posts, { and, lte, isNull, eq, or }) => and(
                 lte(posts.reminderDate, now),
-                isNull(posts.repliedAt)
+                isNull(posts.repliedAt),
+                or(eq(posts.postType, PostTypesEnum.REMINDER), isNull(posts.postType)),
+            )
+        });
+
+        return posts as PostType[]
+
+    }
+
+    public async getPostsToRepost(): Promise<PostType[]>{
+        const now = new Date()
+        const posts = await this.db.query.posts.findMany({
+            where: (posts, { and, lte, isNull, eq }) => and(
+                lte(posts.reminderDate, now),
+                isNull(posts.repliedAt),
+                eq(posts.postType, PostTypesEnum.REPOST)
+            )
+        });
+
+        return posts as PostType[]
+
+    }
+
+    public async getPostsToDelete(): Promise<PostType[]>{
+        const now = new Date()
+        const posts = await this.db.query.posts.findMany({
+            where: (posts, { and, lte, isNull, eq }) => and(
+                lte(posts.reminderDate, now),
+                isNull(posts.repliedAt),
+                eq(posts.postType, PostTypesEnum.DELETE)
             )
         });
 
