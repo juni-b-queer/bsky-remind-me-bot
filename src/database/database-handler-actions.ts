@@ -52,7 +52,7 @@ export class InsertPostReminderInToDatabase extends AbstractMessageAction {
             reminderDate = extractTimeFromInput(timeString, timezone, postTime)
 
             if(noTimezone){
-                timezone = "";
+                timezone = "CT";
             }
 
 
