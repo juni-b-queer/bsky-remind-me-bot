@@ -19,12 +19,11 @@ export class RepostMeHandler extends MessageHandler{
     ) {
         super(
             [
+                PostedByUserValidator.make((handlerAgent: HandlerAgent) => {return handlerAgent.getDid}),
                 IsNewPost.make(),
                 InputIsCommandValidator.make(REPOST_COMMAND, false)
             ],
             [
-
-                new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage),
                 new InsertRepostOrDeleteIntoDatabase(REPOST_COMMAND, PostTypesEnum.REPOST),
                 new DeleteSkeetAction(MessageHandler.getUriFromMessage)
             ],

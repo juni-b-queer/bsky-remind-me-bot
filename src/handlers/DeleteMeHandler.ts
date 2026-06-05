@@ -19,12 +19,12 @@ export class DeleteMeHandler extends MessageHandler{
     ) {
         super(
             [
+                PostedByUserValidator.make((handlerAgent: HandlerAgent) => {return handlerAgent.getDid}),
                 ReplyingToBotValidator.make(),
                 IsNewPost.make(),
                 InputIsCommandValidator.make(DELETE_COMMAND, false)
             ],
             [
-                new CreateLikeAction(MessageHandler.getUriFromMessage, MessageHandler.getCidFromMessage),
                 new InsertRepostOrDeleteIntoDatabase(DELETE_COMMAND, PostTypesEnum.DELETE),
                 new DeleteSkeetAction(MessageHandler.getUriFromMessage)
             ],
