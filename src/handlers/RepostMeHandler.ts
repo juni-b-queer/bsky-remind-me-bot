@@ -19,7 +19,6 @@ export class RepostMeHandler extends MessageHandler{
     ) {
         super(
             [
-                PostedByUserValidator.make(handlerAgent.getDid),
                 IsNewPost.make(),
                 InputIsCommandValidator.make(REPOST_COMMAND, false)
             ],

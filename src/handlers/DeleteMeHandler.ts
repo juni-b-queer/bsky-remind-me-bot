@@ -19,7 +19,6 @@ export class DeleteMeHandler extends MessageHandler{
     ) {
         super(
             [
-                PostedByUserValidator.make(handlerAgent.getDid),
                 ReplyingToBotValidator.make(),
                 IsNewPost.make(),
                 InputIsCommandValidator.make(DELETE_COMMAND, false)
